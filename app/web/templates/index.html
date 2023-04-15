@@ -1,0 +1,160 @@
+<html ng-app="aprs-repeat">
+<head>
+    <title>APRS REPEAT Live map</title>
+    <meta name="lang" content="en" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet"
+          href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+     integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+     crossorigin=""></script>
+
+
+    <script src="https://cdn.socket.io/4.1.2/socket.io.min.js"
+            integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.js"></script>
+
+    <link rel="stylesheet" href="/static/css/map.css">
+    <script src="/static/js/map_leaflet.js"></script>
+
+    <link rel="stylesheet" href="/static/css/control.minimap.css">
+    <script src="/static/js/control.minimap.js"></script>
+    <link rel="stylesheet" href="/static/css/control.fullscreen.css">
+    <script src="/static/js/control.fullscreen.js"></script>
+
+
+    <script src="https://kit.fontawesome.com/94e660c9cc.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-extra-markers/1.2.1/css/leaflet.extra-markers.min.css" integrity="sha512-wurszDyO1nj6ESdfrXb9h1hmoHMu3sQ3iXgKcu/p81lT+KaPGkta9NIPX7k6XXGgVYpcRHcc8AA4UIeQ7Ax/Cw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-extra-markers/1.2.1/js/leaflet.extra-markers.min.js" integrity="sha512-ejMFZwlfxDqEaSHHcCJ9EhzzDyp3QB5NjmGfOp1iwUQ7pFam2pX3EKERWvWK8H5HLQG6ETrx3RvrEFMQ4kIQ/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script defer data-domain="aprs-repeat.hemna.com" src="http://cloud.hemna.com:7000/js/script.js"></script>
+
+
+    <script type="text/javascript">
+            var initial_stats = {{ initial_stats|tojson|safe }};
+            $(document).ready(function() {
+                start_map_update();
+            });
+    </script>
+    <style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			max-width: 100%;
+			max-height: 100%;
+		}
+	</style>
+</head>
+
+<body style="background-color: #fff;">
+
+<div id="map_panel" style="height: 100%; min-height: 200px; margin-right: 300px;">
+  <div style='position: relative; overflow-x: hidden; overflow-y: hidden; height: 100%;' >
+    <div id="map"></div>
+  </div>
+</div>
+
+
+<div class="contentpanel" id="panel" style="visibility: visible; width: 300px;">
+    <h2 class='ui small header' style="padding-top: 5px;">APRS REPEAT service</h2>
+        <div class="ui secondary  menu">
+            <a class="item" href='/about#about' target="_blank"><span class='ui small text'>About</span></a>
+            <a class="item" href='/about#protocol' target="_blank"><span class='ui small text'>REPEAT protocol</span></a>
+            <a class="item" href='https://www.youtube.com/embed/3kcmkaLcKNk' target="_blank"><span class='ui small text'>YT REPEAT video</span></a>
+        </div>
+    <br>
+    <div id='requests' style="height:50%; max-height:50%; overflow-y: scroll; margin-top: 25px;">
+        <div id='requests_list' class="ui relaxed divided list"></div>
+    </div>
+
+    <div id="badges" style="margin-top: 25px;">
+        <a href="https://www.twitter.com/wb4bor"> <img style="width:20px;height:20px;" src="/static/images/twitter_logo_64.png"/>@WB4BOR</a>
+        <br>
+        <h4 class="ui small dividing header"><a href="https://github.com/craigerl/aprsd#aprsd---ham-radio-aprs-is-message-plugin-server" target="_blank" rel="noopener noreferrer">APRSD</a>
+            Version {{ aprsd_version }}</h4>
+        <span class='ui small text' style='color: green'>{{ callsign }}</span> connected to
+        <span class='ui small text' style='color: blue' id='aprs_connection'>{{ aprs_connection|safe }}</span>
+        <br>
+        <span class='ui small text' style='color: blue'>Uptime: </span>
+        <span class='ui small text' id='uptime'>2 days 22:06:39</span>
+        <br><br>
+        <a href="https://badge.fury.io/py/aprsd"><img
+                src="https://img.shields.io/badge/APRSD-Version%20{{ aprsd_version }}-brightgreen"
+                alt="APRSD version" height="18"></a>
+        <a href="https://github.com/craigerl/aprsd"><img
+                src="https://img.shields.io/badge/Made%20with-Python-1f425f.svg"
+                height="18"></a>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+    osmAttrib = '© OpenStreetMap'
+    var osm = L.tileLayer(osmUrl, {
+        maxZoom: 19,
+        attribution: osmAttrib
+    });
+
+    const mbAttr = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>';
+    var mbUrl = "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={{ mapbox_token }}"
+
+    const streets = L.tileLayer(mbUrl, {id: 'mapbox/streets-v11', tileSize: 512, zoomOffset: -1, attribution: mbAttr});
+    const satellite = L.tileLayer(mbUrl, {id: 'mapbox/satellite-v9', tileSize: 512, zoomOffset: -1, attribution: mbAttr});
+    const terrain = L.tileLayer(mbUrl, {id: 'mapbox/mapbox-terrain-v2', tileSize: 512, zoomOffset: -1, attribution: mbAttr});
+
+    var map = L.map('map', {
+        center: [37.344, -78.84933],
+        zoom: 5,
+        layers: [osm]
+    });
+
+    var baseLayers = {
+        "OpenStreetMap": osm,
+        "Mapbox Streets": streets,
+        "Mapbox Satellite": satellite,
+        "Mapbox Terrain": terrain
+    };
+
+    const layerControl = L.control.layers(baseLayers).addTo(map);
+
+    var osm2 = new L.tileLayer(osmUrl, {minZoom: 0, maxZoom: 13, attribution: osmAttrib });
+    var miniMap = new L.Control.MiniMap(osm2, { toggleDisplay: true }).addTo(map);
+
+    // create a fullscreen button and add it to the map
+    L.control.fullscreen({
+      position: 'topleft', // change the position of the button can be topleft, topright, bottomright or bottomleft, default topleft
+      title: 'Show me the fullscreen !', // change the title of the button, default Full Screen
+      titleCancel: 'Exit fullscreen mode', // change the title of the button when fullscreen is on, default Exit Full Screen
+      content: null, // change the content of the button, can be HTML, default null
+      forceSeparateButton: true, // force separate button to detach from zoom buttons, default false
+      forcePseudoFullscreen: true, // force use of pseudo full screen even if full screen API is available, default false
+      fullscreenElement: false // Dom element to render in full screen, false by default, fallback to map._container
+    }).addTo(map);
+
+    // events are fired when entering or exiting fullscreen.
+    map.on('enterFullscreen', function(){
+      console.log('entered fullscreen');
+    });
+
+    map.on('exitFullscreen', function(){
+      console.log('exited fullscreen');
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+div#map{
+    height:100%
+}
+#map_panel .hsplitbar{
+    height:6px;
+    background:#bddbff url(/img/grabberh.gif) no-repeat center
+}
+#map_panel .hsplitbar.active,#MySplitter .hsplitbar:hover{
+    background:#7282ff url(/img/grabberh.gif) no-repeat center
+}
+div.contentpanel,div.divpanel_small,select.divpanel_small,button.divpanel_small,div.gmnoprint{
+    font-size:12px
+}
+div.contentpanel{
+    position:absolute;
+    right:0;
+    top:0;
+    width:300px;
+    height:99%;
+    overflow:auto;
+    background-image:url('/img/map_bg_right.png');
+    background-repeat:no-repeat;
+    padding-right:5px;
+    padding-left:7px;
+    margin:0
+}
+div.contentpanel div.msg_e{
+    background-color:#f2d2d2
+}
+div.contentpanel div.msg_i{
+    background-color:#ecf581
+}
+div.contentpanel div.msg_s{
+    background-color:#c8ffc4
+}
+div.contentpanel div.msg_e,div.contentpanel div.msg_i,div.contentpanel div.msg_s{
+    border:thin solid #bdbdbd;
+    padding:5px;
+    margin:5px 30px 5px 0;
+    border-radius:5px
+}
