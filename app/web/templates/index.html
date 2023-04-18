@@ -1,6 +1,6 @@
 <html ng-app="aprs-repeat">
 <head>
-    <title>APRS REPEAT Live map</title>
+    <title>APRS Nearest Weather Live map</title>
     <meta name="lang" content="en" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,15 +37,16 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-extra-markers/1.2.1/css/leaflet.extra-markers.min.css" integrity="sha512-wurszDyO1nj6ESdfrXb9h1hmoHMu3sQ3iXgKcu/p81lT+KaPGkta9NIPX7k6XXGgVYpcRHcc8AA4UIeQ7Ax/Cw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-extra-markers/1.2.1/js/leaflet.extra-markers.min.js" integrity="sha512-ejMFZwlfxDqEaSHHcCJ9EhzzDyp3QB5NjmGfOp1iwUQ7pFam2pX3EKERWvWK8H5HLQG6ETrx3RvrEFMQ4kIQ/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="markers.js"
 
-    <script defer data-domain="aprs-repeat.hemna.com" src="http://cloud.hemna.com:7000/js/script.js"></script>
+    <script defer data-domain="aprs-weather.hemna.com" src="http://cloud.hemna.com:7001/js/script.js"></script>
 
 
     <script type="text/javascript">
             var initial_stats = {{ initial_stats|tojson|safe }};
-            $(document).ready(function() {
-                start_map_update();
-            });
     </script>
     <style>
 		html, body {
@@ -71,11 +72,10 @@
 
 
 <div class="contentpanel" id="panel" style="visibility: visible; width: 300px;">
-    <h2 class='ui small header' style="padding-top: 5px;">APRS REPEAT service</h2>
+    <h2 class='ui small header' style="padding-top: 5px;">APRS Nearest Weather service</h2>
         <div class="ui secondary  menu">
             <a class="item" href='/about#about' target="_blank"><span class='ui small text'>About</span></a>
-            <a class="item" href='/about#protocol' target="_blank"><span class='ui small text'>REPEAT protocol</span></a>
-            <a class="item" href='https://www.youtube.com/embed/3kcmkaLcKNk' target="_blank"><span class='ui small text'>YT REPEAT video</span></a>
+            <a class="item" href='/about#protocol' target="_blank"><span class='ui small text'>APRS WX protocol</span></a>
         </div>
     <br>
     <div id='requests' style="height:50%; max-height:50%; overflow-y: scroll; margin-top: 25px;">
@@ -155,6 +155,8 @@
     map.on('exitFullscreen', function(){
       console.log('exited fullscreen');
     });
+    var markers = L.markerClusterGroup();
+    map.addLayer(markers);
 </script>
 </body>
 </html>

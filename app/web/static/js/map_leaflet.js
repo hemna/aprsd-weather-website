@@ -97,28 +97,62 @@ function add_repeater_marker(repeater, request_info) {
   L.marker([latitude, longitude], {icon: redMarker}).bindPopup(popup_html).addTo(map);
 }
 
+function get_station_popup_html(station_data, report_data) {
+    console.log(report_data);
+    marker_id = station_data['id'];
+    popup_html = "<div class='ui text'><h3><a href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
+    popup_html += station_data["properties"]["callsign"] + "</a> - </h3>";
+    popup_html += "<p>"+station_data["properties"]["latitude"] + " " + station_data["properties"]["longitude"] + " </p>";
+    popup_html += "<p>Comment: " + station_data["properties"]["comment"]+ "</p>";
+    popup_html += "<p>Last Report Time: " + report_data["time"] + "</p>";
+    popup_html += "<p>Temperature: " + report_data["temperature"] + "</p>";
+    popup_html += "<p>Humidity: " + report_data["humidity"] + "</p>";
+    popup_html += "<p>Pressure: " + report_data["pressure"] + "</p>";
+    popup_html += "<p>Rain last hour: " + report_data["rain_1h"] + "</p>";
+    popup_html += "<p>Rain last 24 hours: " + report_data["rain_24h"] + "</p>";
+    popup_html += "<p>Rain since midnight: " + report_data["rain_since_midnight"] + "</p>";
+    popup_html += "</div>";
+    console.log(popup_html);
+    return popup_html;
+}
 
-function add_marker(data) {
-    marker_id = data['id'];
-    popup_html = "<div class='ui text'><h3><a href='http://aprs.fi/#!mt=roadmap&z=11&call="+data["properties"]["callsign"]+"' target='_new'>";
-    popup_html += data["properties"]["callsign"] + "</a> - ";
-    popup_html += "n " + data["properties"]["count"] + " " + data["properties"]["band"] + " </h3>";
-    popup_html += data["properties"]["created"] + " ";
-    popup_html += "<p>Band: " + data["properties"]["band"];
-    popup_html += "<p>" + data["properties"]["stations"] + "</p></div>";
 
-    var longitude = data['properties']['longitude']
-    var latitude = data['properties']['latitude']
+function add_marker(station_data) {
+    var longitude = station_data['properties']['longitude']
+    var latitude = station_data['properties']['latitude']
 
-    var redMarker = L.ExtraMarkers.icon({
+    var blueMarker = L.ExtraMarkers.icon({
         icon: 'fa-walkie-talkie',
         markerColor: 'blue',
         shape: 'square',
         prefix: 'fa-solid'
     });
-    L.marker([latitude, longitude], {icon: redMarker}).bindPopup(popup_html).addTo(map);
+    marker = L.marker([latitude, longitude], {icon: blueMarker});
+    marker.bindPopup("Loading...");
 
-    request_html = "<div class='item' id='"+marker_id+"'><i class='large map pin middle aligned icon'></i>"
+    function onMapClick(e) {
+            var popup = e.target.getPopup();
+            console.log(popup);
+
+            $.ajax({
+                url: "/wx_report?wx_station_id="+station_data['properties']['id'],
+                type: 'GET',
+                dataType: 'json',
+                success: function(data){
+                    content = get_station_popup_html(station_data, data);
+                    popup.setContent( content );
+                    popup.update();
+                },
+                fail: function(data) {
+                    alert('FAIL: ' + data);
+                }
+            });
+    };
+
+    marker.on('click', onMapClick );
+    markers.addLayer(marker);
+
+    /*request_html = "<div class='item' id='"+marker_id+"'><i class='large map pin middle aligned icon'></i>"
     request_html += "<div class='content'><a class='header' href='http://aprs.fi/#!mnt=roadmap&z=11&call=" + data["properties"]["callsign"] + "' target='_new'>"
     request_html += data["properties"]["callsign"] + " - ";
     request_html += "n " + data["properties"]["count"] + " " + data["properties"]["band"] + " </a>";
@@ -131,6 +165,7 @@ function add_marker(data) {
       map.setView(coords, 11);
       fetch_repeaters(data);
     });
+    */
 }
 
 function update_map(data) {
@@ -144,15 +179,12 @@ function update_map(data) {
 function start_map_update() {
     (function requestsworker() {
             $.ajax({
-                url: "/requests",
+                url: "/stations",
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
                     update_map(data);
                 },
-                complete: function() {
-                    setTimeout(requestsworker, 10000);
-                }
             });
     })();
 
