@@ -88,7 +88,7 @@
         <div class="leaflet-sidebar-content">
             <div class="leaflet-sidebar-pane" id="home">
                 <h1 class="leaflet-sidebar-header">
-                    APRS Nearest Weather service
+                    WXNOW APRS Nearest Weather service
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 <div id="badges" style="margin-top: 25px;">
@@ -179,7 +179,7 @@
 
         // create the sidebar instance and add it to the map
         var sidebar = L.control.sidebar({ container: 'sidebar' })
-            .addTo(map);
+            .addTo(map).open('home');
 
     </script>
 </body>
