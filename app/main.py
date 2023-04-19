@@ -69,10 +69,18 @@ app = Flask(__name__,
 
 
 def fetch_stats():
-    stats = aprsd_rpc_client.RPCClient().get_stats_dict()
+    stats = None
+    try:
+        stats = aprsd_rpc_client.RPCClient().get_stats_dict()
+    except Exception as ex:
+        LOG.error(ex)
+
     if not stats:
-        stats_dict = {
-            "aprsd": {},
+        stats = {
+            "aprsd": {
+                "seen_list": [],
+                "version": "unknown",
+            },
             "aprs-is": {"server": ""},
             "messages": {
                 "sent": 0,
@@ -86,6 +94,9 @@ def fetch_stats():
                 "sent": 0,
                 "received": 0,
             },
+            "repeat": {
+                "version": "unknown",
+            }
         }
     #LOG.debug(f"stats {stats}")
     if "aprsd" in stats:
@@ -95,7 +106,6 @@ def fetch_stats():
         del stats["email"]
     if "messages" in stats:
         del stats["messages"]
-    stats["repeat"] = {}
     if "plugins" in stats:
         if "aprsd_repeat_plugins.version.VersionPlugin" in stats["plugins"]:
             stats["repeat"]["version"] = stats["plugins"]["aprsd_repeat_plugins.version.VersionPlugin"]["version"]
@@ -121,7 +131,7 @@ def stats():
 
 
 @cached(cache=TTLCache(maxsize=40960, ttl=30), info=True)
-def _get_wx():
+def _get_wx_stations():
     url = f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/wxstations"
     LOG.debug(f"Fetching {url}")
     stations = []
@@ -157,7 +167,7 @@ def _get_wx():
 
 @app.route("/stations")
 def get_stations():
-    return json.dumps(_get_wx())
+    return json.dumps(_get_wx_stations())
 
 @app.route("/wx_report", methods=["GET"])
 def wx_report():
@@ -196,8 +206,8 @@ def wx_report():
 
 @app.route("/markers.js")
 def markers_js():
-    stations = _get_wx()
-    LOG.warning(f"info? {_get_wx.cache_info()}")
+    stations = _get_wx_stations()
+    LOG.warning(f"info? {_get_wx_stations.cache_info()}")
     stations_str ="stations = {};"
     if stations:
         stations_str = (
@@ -206,6 +216,40 @@ def markers_js():
         )
 
     return stations_str
+
+
+def fetch_requests():
+    url = f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/wxrequests"
+    LOG.debug(f"Fetching {url}")
+    markers = []
+    try:
+        params = {
+            "number": 50,
+        }
+        headers = {API_KEY_HEADER: CONF.web.api_key}
+        response = requests.post(url=url, json=params, headers=headers,
+                                 timeout=2)
+        if response.status_code == 200:
+            json_record = response.json()
+            for entry in json_record:
+                entry['station_callsigns'] = entry['station_callsigns'].replace(',', ', ')
+
+                # Now convert each entry into a geojson feature
+                point = Point((entry['latitude'], entry['longitude']))
+                marker = Feature(geometry=point,
+                                 id=entry['id'],
+                                 properties=entry
+                                 )
+                markers.append(marker)
+    except Exception as ex:
+        LOG.error(ex)
+
+    return json.dumps(markers)
+
+
+@app.route("/requests")
+def get_requests():
+    return fetch_requests()
 
 
 @app.route("/")
@@ -221,7 +265,7 @@ def index():
     return flask.render_template("index.html",
                                  initial_stats=aprsd_stats,
                                  aprs_connection=aprs_connection,
-                                 callsign='REPEAT',
+                                 callsign='WXNOW',
                                  version=version,
                                  aprsd_version=aprsd_version,
                                  mapbox_token=CONF.web.mapbox_token

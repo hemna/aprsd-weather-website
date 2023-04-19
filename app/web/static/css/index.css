@@ -90,3 +90,21 @@ footer {
     width: 16px;
     height: 16px;
 }
+
+/*style="
+ background:url(&quot;/s1/aprs-symbols-24-0.png&quot;) no-repeat -336px -72px;
+ background-size: 384px 144px; width: 24px; height: 24px; margin: 0px;
+ vertical-align:middle; display:inline-block;"></span>
+*/
+
+.wx_icon {
+    background-image: url(/static/images/aprs-symbols-24-0.png);
+    background-repeat: no-repeat;
+    background-position: -336px -72px;
+    background-size: 384px 144px;
+    vertical-align: middle;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    margin: 0px;
+}

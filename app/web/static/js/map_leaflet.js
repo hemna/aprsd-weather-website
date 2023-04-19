@@ -1,138 +1,78 @@
-function add_repeater_markers(stations, request_info) {
-  stations = JSON.parse(stations);
-  //console.log(stations);
-  $.each(stations, function(index, value) {
-        add_repeater_marker(value, request_info);
-    });
+/**
+ * Converts decimal degrees to degrees minutes seconds.
+ *
+ * @param dd the decimal degrees value.
+ * @param isLng specifies whether the decimal degrees value is a longitude.
+ * @return degrees minutes seconds string in the format 49°15'51.35"N
+ */
+function convertToDms(dd, isLng) {
+  var dir = dd < 0
+    ? isLng ? 'W' : 'S'
+    : isLng ? 'E' : 'N';
+
+  var absDd = Math.abs(dd);
+  var deg = absDd | 0;
+  var frac = absDd - deg;
+  var min = (frac * 60) | 0;
+  var sec = frac * 3600 - min * 60;
+  // Round it to 2 decimal points.
+  sec = Math.round(sec * 100) / 100;
+  return deg + "°" + min + "'" + sec + '"' + dir;
 }
 
-function fetch_repeaters(data_dict) {
-    params = {
-     'callsigns': data_dict['properties']['stations'],
-     'repeater_ids': data_dict['properties']['repeater_ids']
-     };
-
-    $.ajax({
-        url: "/stations",
-        type: 'POST',
-        data: JSON.stringify(params),
-        cache: false,
-        contentType: 'application/json',
-        success: function(data) {
-            add_repeater_markers(data, data_dict);
-        },
-        error: function(xhr) {
-            console.log("failed to fetch repeaters");
-        },
-    });
+function cToF(celsius) {
+  const cTemp = celsius;
+  const cToFahr = cTemp * 9 / 5 + 32;
+  return cToFahr
 }
 
-function add_repeater_marker(repeater, request_info) {
-   popup_html = repeater["properties"]["callsign"];
-   const rptr = repeater["properties"];
-   const req = request_info["properties"];
-
-   if (rptr['allstar_node'] == true) {
-       allstar_html = `<span style='color: blue; text-decoration: underline red;'>Allstar</span>`
-   } else {
-       allstar_html = `<span style='color: grey; text-decoration: line-through'>Allstar</span>`
-   }
-   if (rptr['echolink_node'] == true) {
-       echo_html = `<span style='color: blue; text-decoration: underline red;'>EchoLink</span>`
-   } else {
-       echo_html = `<span style='color: grey; text-decoration: line-through'>EchoLink</span>`
-   }
-   if (rptr['dstar'] == true) {
-       dstar_html = `<span style='color: blue; text-decoration: underline red;'>DStar</span>`
-   } else {
-       dstar_html = `<span style='color: grey; text-decoration: line-through red;'>DStar</span>`
-   }
-   if (rptr['irlp_node'] == true) {
-       irlp_html = `<span style='color: blue; text-decoration: underline red;'>IRLP</span>`
-   } else {
-       irlp_html = `<span style='color: grey; text-decoration: line-through red;'>IRLP</span>`
-   }
-   if (rptr['races'] == true) {
-       races_html = `<span style='color: blue; text-decoration: underline red;'>RACES</span>`
-   } else {
-       races_html = `<span style='color: grey; text-decoration: line-through red;'>RACES</span>`
-   }
-
-   switch (rptr['country'].toLowerCase()) {
-     case 'united states':
-     case 'canada':
-     case 'mexico':
-        rptr_base_url = 'https://repeaterbook.com/repeaters/details.php';
-        break;
-     default:
-        // Rest oF World
-        rptr_base_url = 'https://repeaterbook.com/row_repeaters/details.php';
-        break;
-   }
-
-   popup_html = `
-   <div class="ui text">
-     <div style="float:left;">
-       <span style="background:url('/static/images/aprs-symbols-24-0.png') no-repeat -24px -120px; background-size: 384px 144px; width: 24px; height: 24px; margin: 0px; vertical-align:middle; display:inline-block;"></span>
-        <b><a href="${rptr_base_url}?state_id=${rptr['state_id']}&ID=${rptr['repeater_id']}" target="_new">${rptr['callsign']} · ${rptr['frequency']} · ${rptr['freq_band']}</a></b>
-     </div>
-     <div style="width:14px;float:left;"></div>
-     <div style="clear:left;background-color:#ff00ff;opacity:0.6;height: 2px;"></div>
-     ${req['created']}<br>
-     <span style="color:#0a7100; font-style:italic;" title="Comment text">${rptr["landmark"]} · ${rptr["nearest_city"]}</span><br>
-     <small>${allstar_html} · ${dstar_html} · ${echo_html} · ${irlp_html} · ${races_html}</small>
-   </div>`
-   latitude = repeater["properties"]["lat"]
-   longitude = repeater["properties"]["long"]
-   // color: #b40219
-   //var marker = L.marker([latitude, longitude]).bindPopup(popup_html).addTo(map);
-
-   var redMarker = L.ExtraMarkers.icon({
-    icon: 'fa-tower-cell',
-    markerColor: 'red',
-    shape: 'square',
-    prefix: 'fa-solid'
-  });
-
-  L.marker([latitude, longitude], {icon: redMarker}).bindPopup(popup_html).addTo(map);
+function fToC(fahrenheit) {
+  const fTemp = fahrenheit;
+  const fToCel = (fTemp - 32) * 5 / 9;
+  return fToCel
 }
+
 
 function get_station_popup_html(station_data, report_data) {
-    console.log(report_data);
     marker_id = station_data['id'];
-    popup_html = "<div class='ui text'><h3><a href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
-    popup_html += station_data["properties"]["callsign"] + "</a> - </h3>";
-    popup_html += "<p>"+station_data["properties"]["latitude"] + " " + station_data["properties"]["longitude"] + " </p>";
-    popup_html += "<p>Comment: " + station_data["properties"]["comment"]+ "</p>";
-    popup_html += "<p>Last Report Time: " + report_data["time"] + "</p>";
-    popup_html += "<p>Temperature: " + report_data["temperature"] + "</p>";
-    popup_html += "<p>Humidity: " + report_data["humidity"] + "</p>";
-    popup_html += "<p>Pressure: " + report_data["pressure"] + "</p>";
-    popup_html += "<p>Rain last hour: " + report_data["rain_1h"] + "</p>";
-    popup_html += "<p>Rain last 24 hours: " + report_data["rain_24h"] + "</p>";
-    popup_html += "<p>Rain since midnight: " + report_data["rain_since_midnight"] + "</p>";
+    lat_str = convertToDms(station_data["properties"]["latitude"], false)
+    lon_str = convertToDms(station_data["properties"]["longitude"], true)
+    temperature = Math.ceil(cToF(report_data["temperature"])*100)/100
+    popup_html = "<div class='ui text'><a class='ui large text' href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
+    popup_html += station_data["properties"]["callsign"] + "</a>";
+    popup_html += "<div style='clear:left;background-color:#0000ff;opacity:0.6;height: 2px';></div>"
+    popup_html += "<div class-'ui tiny text'>"+lat_str + " " + lon_str + "\n<br>";
+    popup_html += "Last Report Time: " + report_data["time"] + "<br>\n<br>";
+    popup_html += "Comment: " + station_data["properties"]["comment"]+ "\n<br>";
+    popup_html += "Temperature: <b>" + temperature + "°F </b>\n<br>";
+    popup_html += "Pressure: <b>" + report_data["pressure"] + "mbar</b>&nbsp;&nbsp;\n";
+    popup_html += "Humidity: <b>" + report_data["humidity"] + "</b>\n<br>";
+    popup_html += "Wind Direction: <b>" + report_data["wind_direction"] + "</b>&nbsp;&nbsp;";
+    popup_html += "Wind Speed: <b>" + report_data["wind_gust"] + "</b><br>";
+    popup_html += "Rain last hour: <b>" + report_data["rain_1h"] + "</b>&nbsp;&nbsp;";
+    popup_html += "last 24 hours: <b>" + report_data["rain_24h"] + "</b>&nbsp;&nbsp;";
+    popup_html += "since midnight: <b>" + report_data["rain_since_midnight"] + "</b>\n";
     popup_html += "</div>";
-    console.log(popup_html);
     return popup_html;
 }
-
 
 function add_marker(station_data) {
     var longitude = station_data['properties']['longitude']
     var latitude = station_data['properties']['latitude']
 
-    var blueMarker = L.ExtraMarkers.icon({
-        icon: 'fa-walkie-talkie',
-        markerColor: 'blue',
-        shape: 'square',
-        prefix: 'fa-solid'
-    });
-    marker = L.marker([latitude, longitude], {icon: blueMarker});
+    var wxIcon = L.icon({
+        iconUrl: '/static/images/wx_icon.png',
+
+        iconSize:     [24, 24], // size of the icon
+        iconAnchor:   [12, 12], // point of the icon which will correspond to marker's location
+        shadowAnchor: [4, 62],  // the same for the shadow
+        popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+    })
+    marker = L.marker([latitude, longitude], {icon: wxIcon});
     marker.bindPopup("Loading...");
 
     function onMapClick(e) {
             var popup = e.target.getPopup();
-            console.log(popup);
 
             $.ajax({
                 url: "/wx_report?wx_station_id="+station_data['properties']['id'],
@@ -151,46 +91,62 @@ function add_marker(station_data) {
 
     marker.on('click', onMapClick );
     markers.addLayer(marker);
+}
 
-    /*request_html = "<div class='item' id='"+marker_id+"'><i class='large map pin middle aligned icon'></i>"
-    request_html += "<div class='content'><a class='header' href='http://aprs.fi/#!mnt=roadmap&z=11&call=" + data["properties"]["callsign"] + "' target='_new'>"
-    request_html += data["properties"]["callsign"] + " - ";
-    request_html += "n " + data["properties"]["count"] + " " + data["properties"]["band"] + " </a>";
-    request_html += "<div class='description'>" + data["properties"]["created"] + "</div>"
-    request_html += "<div class='description'>" + data["properties"]["stations"] + "</div>"
-    request_html += "</div>"
+function add_request(data) {
+    var longitude = data['properties']['longitude']
+    var latitude = data['properties']['latitude']
+    marker_id = data['id']
+    popup_html = "<i class='large map pin middle aligned icon'></i>";
+    popup_html += "<div class='content'><a class='header' href='http://aprs.fi/#!mnt=roadmap&z=11&call=" + data["properties"]["callsign"] + "' target='_new'>";
+    popup_html += data["properties"]["callsign"] + " - ";
+    popup_html += "n " + data["properties"]["count"] + " </a>";
+    popup_html += "<div class='description'>" + data["properties"]["created"] + "</div>";
+    popup_html += "<div class='description'>" + data["properties"]["station_callsigns"] + "</div>";
+
+    request_html = "<div class='item' id='"+marker_id+"'>"
+    request_html += popup_html;
+    request_html += "</div>";
     $('#requests_list').append(request_html);
     $('#'+marker_id).click(function() {
       coords = [data["properties"]["latitude"], data["properties"]["longitude"]];
+      var redMarker = L.ExtraMarkers.icon({
+        icon: 'fa-walkie-talkie',
+        markerColor: 'red',
+        shape: 'square',
+        prefix: 'fa-solid'
+      });
+      L.marker([latitude, longitude], {icon: redMarker}).bindPopup(popup_html).addTo(map);
       map.setView(coords, 11);
-      fetch_repeaters(data);
     });
-    */
+}
+
+function update_requests(data) {
+    $('#requests_list').html('');
+    $.each(data, function(index, value) {
+        add_request(value);
+    });
+
 }
 
 function update_map(data) {
-    $('#requests_list').html('');
-
     $.each(data, function(index, value) {
         add_marker(value);
     });
 }
 
-function start_map_update() {
+function start_requests_update() {
     (function requestsworker() {
             $.ajax({
-                url: "/stations",
+                url: "/requests",
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
-                    update_map(data);
+                    update_requests(data);
                 },
+                complete: function() {
+                    setTimeout(requestsworker, 60000);
+                }
             });
     })();
-
-    /*
-    map.once('idle', function() {
-      map.resize();
-    })
-    */
 }
