@@ -1,0 +1,16 @@
+aprsd>=3.0.0
+flask
+flask-socketio
+flask-classful
+geojson
+requests
+rich
+simple-websocket
+oslo.config
+oslo.log
+click
+click-completion
+gunicorn
+whitenoise
+cachetools
+pyproj
