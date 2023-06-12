@@ -6,6 +6,7 @@ import logging as python_logging
 import requests
 import sys
 
+from aprslib import parse as aprs_parse
 from cachetools import cached, TTLCache
 import flask
 from flask import Flask, request
@@ -99,6 +100,7 @@ def fetch_stats():
             }
         }
     #LOG.debug(f"stats {stats}")
+    stats['repeat'] = {'version': 'unknown'}
     if "aprsd" in stats:
         if "watch_list" in stats["aprsd"]:
             del stats["aprsd"]["watch_list"]
@@ -197,6 +199,15 @@ def wx_report():
 
         if response.status_code == 200:
             json_record = response.json()
+            try:
+                decoded = aprs_parse(json_record.get('raw_report'))
+                json_record['decoded'] = decoded
+                LOG.info(f"DECODED {decoded}")
+            except Exception as ex:
+                LOG.error(f"Failed DECODED {ex}")
+                json_record['decoded'] = {'path': 'unknown'}
+                pass
+
             return json_record
         else:
             LOG.error(response)

@@ -38,19 +38,20 @@ function get_station_popup_html(station_data, report_data) {
     lat_str = convertToDms(station_data["properties"]["latitude"], false)
     lon_str = convertToDms(station_data["properties"]["longitude"], true)
     temperature = Math.ceil(cToF(report_data["temperature"])*100)/100
-    popup_html = "<div class='ui text'><a class='ui large text' href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
+    popup_html = "<div><a class='ui large text' href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
     popup_html += station_data["properties"]["callsign"] + "</a>";
     popup_html += "<div style='clear:left;background-color:#0000ff;opacity:0.6;height: 2px';></div>"
     popup_html += "<div class-'ui tiny text'>"+lat_str + " " + lon_str + "\n<br>";
-    popup_html += "Last Report Time: " + report_data["time"] + "<br>\n<br>";
+    popup_html += "Report Time: " + report_data["time"] + "\n";
+    popup_html += "<div style='width:300px;word-wrap: break-word'><small>[<b style='margin:0px;padding:0px;color:blue;'>Path</b>]&nbsp;" + report_data['decoded']['path']+ "</small></div><br>";
     popup_html += "Comment: " + station_data["properties"]["comment"]+ "\n<br>";
     popup_html += "Temperature: <b>" + temperature + "°F </b>\n<br>";
-    popup_html += "Pressure: <b>" + report_data["pressure"] + "mbar</b>&nbsp;&nbsp;\n";
+    popup_html += "Pressure: <b>" + report_data["pressure"] + "hPa</b>&nbsp;&nbsp;\n";
     popup_html += "Humidity: <b>" + report_data["humidity"] + "</b>\n<br>";
     popup_html += "Wind Direction: <b>" + report_data["wind_direction"] + "</b>&nbsp;&nbsp;";
     popup_html += "Wind Speed: <b>" + report_data["wind_gust"] + "</b><br>";
-    popup_html += "Rain last hour: <b>" + report_data["rain_1h"] + "</b>&nbsp;&nbsp;";
-    popup_html += "last 24 hours: <b>" + report_data["rain_24h"] + "</b>&nbsp;&nbsp;";
+    popup_html += "Rain last hour: <b>" + report_data["rain_1h"] + "</b>&nbsp;&nbsp;\n<br>";
+    popup_html += "last 24 hours: <b>" + report_data["rain_24h"] + "</b>&nbsp;&nbsp;\n<br>";
     popup_html += "since midnight: <b>" + report_data["rain_since_midnight"] + "</b>\n";
     popup_html += "</div>";
     return popup_html;
@@ -94,19 +95,19 @@ function add_marker(station_data) {
 }
 
 function add_request(data) {
+    console.log(data);
     var longitude = data['properties']['longitude']
     var latitude = data['properties']['latitude']
     marker_id = data['id']
-    popup_html = "<i class='large map pin middle aligned icon'></i>";
-    popup_html += "<div class='content'><a class='header' href='http://aprs.fi/#!mnt=roadmap&z=11&call=" + data["properties"]["callsign"] + "' target='_new'>";
-    popup_html += data["properties"]["callsign"] + " - ";
-    popup_html += "n " + data["properties"]["count"] + " </a>";
-    popup_html += "<div class='description'>" + data["properties"]["created"] + "</div>";
-    popup_html += "<div class='description'>" + data["properties"]["station_callsigns"] + "</div>";
+    popup_html = "";
+    popup_html += "<b style='color: blue;'>" + data["properties"]["callsign"] + "</b>";
+    popup_html += "&nbsp;-&nbsp;<b style='color: green'>n " + data["properties"]["count"] + " </b>";
+    popup_html += "<p>" + data["properties"]["created"] + "</p>";
+    popup_html += "<p>" + data["properties"]["station_callsigns"] + "</p>";
 
-    request_html = "<div class='item' id='"+marker_id+"'>"
+    request_html = "<a href='#' id='"+marker_id+"' class='list-group-item list-group-item-action'>"
     request_html += popup_html;
-    request_html += "</div>";
+    request_html += "</a></div>";
     $('#requests_list').append(request_html);
     $('#'+marker_id).click(function() {
       coords = [data["properties"]["latitude"], data["properties"]["longitude"]];
