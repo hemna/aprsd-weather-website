@@ -108,12 +108,8 @@ def fetch_stats():
         del stats["email"]
     if "messages" in stats:
         del stats["messages"]
-    if "plugins" in stats:
-        if "aprsd_repeat_plugins.version.VersionPlugin" in stats["plugins"]:
-            stats["repeat"]["version"] = stats["plugins"]["aprsd_repeat_plugins.version.VersionPlugin"]["version"]
-        else:
-            stats["repeat"]["version"] = "dev"
-        del stats["plugins"]
+    if 'repeat' not in stats:
+        stats['repeat'] = {'version':'dev'}
 
     if "aprsd" in stats:
         if "seen_list" in stats["aprsd"] and "REPEAT" in stats["aprsd"]["seen_list"]:
@@ -132,7 +128,7 @@ def stats():
     return fetch_stats()
 
 
-@cached(cache=TTLCache(maxsize=40960, ttl=30), info=True)
+@cached(cache=TTLCache(maxsize=40960, ttl=600), info=True)
 def _get_wx_stations():
     url = f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/wxstations"
     LOG.debug(f"Fetching {url}")
