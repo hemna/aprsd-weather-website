@@ -8,4 +8,4 @@ export COLUMNS
 #pip install whitenoise
 #pip freeze
 #/usr/local/bin/gunicorn -w 6 --conf gunicorn_conf.py --bind '[::]:80' "main:create_app(config_file='config/aprsd_repeat.conf')"
-gunicorn -w 1 --conf gunicorn_conf.py --bind '[::]:80' "main:create_app(config_file='config/aprsd_repeat.conf')"
+gunicorn -w 6 --conf gunicorn_conf.py --bind '[::]:80' "main:create_app(config_file='config/aprsd_listen.conf')"
