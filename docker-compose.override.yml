@@ -1,13 +1,13 @@
 version: '3'
 services:
   web:
-    image: hemna6969/repeat-website:latest
+    image: hemna6969/wxnow-website:latest
     volumes:
       - ./app:/app
       - ./logs:/logs
       - ./config:/app/config
     ports:
-      - 80:80
+      - 4001:80
     restart: unless-stopped
     environment:
       - FLASK_APP=main.py
