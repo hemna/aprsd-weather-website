@@ -99,15 +99,14 @@ function add_request(data) {
     var longitude = data['properties']['longitude']
     var latitude = data['properties']['latitude']
     marker_id = data['id']
-    popup_html = "";
-    popup_html += "<b style='color: blue;'>" + data["properties"]["callsign"] + "</b>";
+    popup_html = "<b style='color: blue;'>" + data["properties"]["callsign"] + "</b>";
     popup_html += "&nbsp;-&nbsp;<b style='color: green'>n " + data["properties"]["count"] + " </b>";
     popup_html += "<p>" + data["properties"]["created"] + "</p>";
-    popup_html += "<p>" + data["properties"]["station_callsigns"] + "</p>";
+    popup_html += "<p style='color: grey'>" + data["properties"]["station_callsigns"] + "</p>";
 
-    request_html = "<a href='#' id='"+marker_id+"' class='list-group-item list-group-item-action'>"
+    request_html = "<a style='padding-bottom: 0px;' href='#' id='"+marker_id+"' class='list-group-item list-group-item-action'>"
     request_html += popup_html;
-    request_html += "</a></div>";
+    request_html += "</a>";
     $('#requests_list').append(request_html);
     $('#'+marker_id).click(function() {
       coords = [data["properties"]["latitude"], data["properties"]["longitude"]];

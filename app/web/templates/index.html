@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>APRS Nearest Weather Live map</title>
     <meta name="lang" content="en" />
     <meta charset="utf-8" />
@@ -93,23 +94,23 @@
 
         <!-- panel content -->
         <div class="leaflet-sidebar-content">
-            <div class="leaflet-sidebar-pane" id="home">
+            <div class="leaflet-sidebar-pane" id="home" style="padding-left: 0px;">
                 <h1 class="leaflet-sidebar-header">
                     WXNOW APRS Nearest Weather service
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 <div id="badges" style="margin-top: 25px;">
-                    <a href="https://www.twitter.com/wb4bor"> <img style="width:20px;height:20px;" src="/static/images/twitter_logo_64.png"/>@WB4BOR</a>
+                    <a href="https://www.twitter.com/wb4bor"><img style="width:20px;height:20px;" src="/static/images/twitter_logo_64.png"/>@WB4BOR</a>
                     <br>
-                    <h4 class="ui small dividing header">
+                    <p class="h6">
                         Built using
                         <a href="https://github.com/craigerl/aprsd#aprsd---ham-radio-aprs-is-message-plugin-server" target="_blank" rel="noopener noreferrer">APRSD</a>
-                        Version {{ aprsd_version }}</h4>
-                    <span class='ui small text' style='color: green'>{{ callsign }}</span> connected to
-                    <span class='ui small text' style='color: blue' id='aprs_connection'>{{ aprs_connection|safe }}</span>
+                        Version {{ aprsd_version }}</p>
+                    <span class='h6' style='color: green'>{{ callsign }}</span> connected to
+                    <span class='h6' style='color: blue' id='aprs_connection'>{{ aprs_connection|safe }}</span>
                     <br>
-                    <span class='ui small text' style='color: blue'>Uptime: </span>
-                    <span class='ui small text' id='uptime'>2 days 22:06:39</span>
+                    <span class='h6' style='color: blue'>Uptime: </span>
+                    <span class='h6' id='uptime'>2 days 22:06:39</span>
                     <br><br>
                     <a href="https://badge.fury.io/py/aprsd"><img
                             src="https://img.shields.io/badge/APRSD-Version%20{{ aprsd_version }}-brightgreen"
@@ -117,9 +118,9 @@
                     <a href="https://github.com/craigerl/aprsd"><img
                             src="https://img.shields.io/badge/Made%20with-Python-1f425f.svg"
                             height="18"></a>
-                </div>
-                <div id='requests' style="height:50%; max-height:50%; overflow-y: scroll; margin-top: 25px;">
-                    <div id='requests_list' class="list-group"></div>
+                    <div id='requests' style="height:80%; max-height:80%; overflow-y: scroll; margin-top: 25px;">
+                        <div id='requests_list' class="list-group"></div>
+                    </div>
                 </div>
             </div>
         </div>
