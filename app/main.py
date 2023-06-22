@@ -269,11 +269,13 @@ def index():
 
     version = aprsd_stats["repeat"]["version"]
     aprsd_version = aprsd_stats["aprsd"]["version"]
+    uptime = aprsd_stats["aprsd"]["uptime"]
     return flask.render_template("index.html",
                                  initial_stats=aprsd_stats,
                                  aprs_connection=aprs_connection,
                                  callsign='WXNOW',
                                  version=version,
+                                 uptime=uptime,
                                  aprsd_version=aprsd_version,
                                  mapbox_token=CONF.web.mapbox_token
                                  )
@@ -289,11 +291,13 @@ def about():
 
     version = aprsd_stats["repeat"]["version"]
     aprsd_version = aprsd_stats["aprsd"]["version"]
+    uptime = aprsd_stats["aprsd"]["uptime"]
     return flask.render_template("about.html",
                                  initial_stats=aprsd_stats,
                                  aprs_connection=aprs_connection,
                                  callsign='REPEAT',
                                  version=version,
+                                 uptime=uptime,
                                  aprsd_version=aprsd_version,
                                  mapbox_token=CONF.web.mapbox_token
                                  )
