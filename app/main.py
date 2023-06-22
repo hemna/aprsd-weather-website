@@ -262,6 +262,7 @@ def get_requests():
 @app.route("/")
 def index():
     aprsd_stats = fetch_stats()
+    LOG.debug(aprsd_stats)
     aprs_connection = (
         "APRS-IS Server: <a href='http://status.aprs2.net' >"
         "{}</a>".format(aprsd_stats["aprs-is"]["server"])
@@ -269,7 +270,7 @@ def index():
 
     version = aprsd_stats["repeat"]["version"]
     aprsd_version = aprsd_stats["aprsd"]["version"]
-    uptime = aprsd_stats["aprsd"]["uptime"]
+    uptime = aprsd_stats["aprsd"].get("uptime")
     return flask.render_template("index.html",
                                  initial_stats=aprsd_stats,
                                  aprs_connection=aprs_connection,
@@ -291,7 +292,7 @@ def about():
 
     version = aprsd_stats["repeat"]["version"]
     aprsd_version = aprsd_stats["aprsd"]["version"]
-    uptime = aprsd_stats["aprsd"]["uptime"]
+    uptime = aprsd_stats["aprsd"].get("uptime")
     return flask.render_template("about.html",
                                  initial_stats=aprsd_stats,
                                  aprs_connection=aprs_connection,
