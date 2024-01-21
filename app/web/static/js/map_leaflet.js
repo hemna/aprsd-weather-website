@@ -95,7 +95,7 @@ function add_marker(station_data) {
 }
 
 function add_request(data) {
-    console.log(data);
+    // console.log(data);
     var longitude = data['properties']['longitude']
     var latitude = data['properties']['latitude']
     marker_id = data['id']
