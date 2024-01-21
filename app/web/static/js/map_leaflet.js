@@ -130,12 +130,24 @@ function update_requests(data) {
 }
 
 function update_map(data) {
+    console.log("update_map " + Object.keys(data).length + " stations");
     $.each(data, function(index, value) {
         add_marker(value);
     });
 }
 
 function start_requests_update() {
+    (function requestsworker() {
+            $.ajax({
+                url: "/stations",
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    update_map(data);
+                },
+            });
+    })();
+
     (function requestsworker() {
             $.ajax({
                 url: "/requests",
