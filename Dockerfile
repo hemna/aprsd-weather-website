@@ -1,4 +1,4 @@
-FROM tiangolo/meinheld-gunicorn:python3.9
+FROM hemna6969/uvicorn-gunicorn-fastapi:python-3.10
 
 # If STATIC_INDEX is 1, serve / with /static/index.html directly (or the static URL configured)
 # ENV STATIC_INDEX 1

@@ -76,7 +76,7 @@ function add_marker(station_data) {
             var popup = e.target.getPopup();
 
             $.ajax({
-                url: "/wx_report?wx_station_id="+station_data['properties']['id'],
+                url: "/wx_report/"+station_data['properties']['id'],
                 type: 'GET',
                 dataType: 'json',
                 success: function(data){
@@ -122,21 +122,28 @@ function add_request(data) {
 }
 
 function update_requests(data) {
+    console.log("update_requests " + Object.keys(data).length + " requests");
+    //console.log(data);
     $('#requests_list').html('');
-    $.each(data, function(index, value) {
+    $.each(JSON.parse(data), function(index, value) {
         add_request(value);
     });
 
 }
 
+
 function update_map(data) {
     console.log("update_map " + Object.keys(data).length + " stations");
+    console.log(data);
     $.each(data, function(index, value) {
         add_marker(value);
     });
 }
 
+
 function start_requests_update() {
+
+/*
     (function requestsworker() {
             $.ajax({
                 url: "/stations",
@@ -147,6 +154,8 @@ function start_requests_update() {
                 },
             });
     })();
+
+*/
 
     (function requestsworker() {
             $.ajax({

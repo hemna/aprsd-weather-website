@@ -8,15 +8,15 @@ import sys
 
 from aprslib import parse as aprs_parse
 from cachetools import cached, TTLCache
-import flask
-from flask import Flask, request
 from geojson import Feature, Point
 from oslo_config import cfg
 from whitenoise import WhiteNoise
 from aprsd.rpc import client as aprsd_rpc_client
 
-#from . import log
-#from . import utils
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 import log
 import utils
@@ -63,10 +63,11 @@ LOG = None
 CONF.register_opts(web_opts, group="web")
 CONF.register_opts(aprsd.conf.common.rpc_opts, group="rpc_settings")
 API_KEY_HEADER = "X-Api-Key"
-app = Flask(__name__,
-            static_url_path="/static",
-            static_folder="web/static",
-            template_folder="web/templates")
+app = FastAPI(
+    static_url_path="/static",
+    static_folder="web/static",
+    template_folder="web/templates"
+)
 
 
 def fetch_stats():
@@ -123,12 +124,7 @@ def fetch_stats():
     return stats
 
 
-@app.route("/stats")
-def stats():
-    return fetch_stats()
-
-
-@cached(cache=TTLCache(maxsize=40960, ttl=600), info=True)
+@cached(cache=TTLCache(maxsize=40960, ttl=6), info=True)
 def _get_wx_stations():
     url = f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/wxstations"
     LOG.debug(f"Fetching {url}")
@@ -163,20 +159,9 @@ def _get_wx_stations():
     return stations
 
 
-@app.route("/stations")
-def get_stations():
-    return json.dumps(_get_wx_stations())
-
-@app.route("/wx_report", methods=["GET"])
-def wx_report():
-    wx_station_id = None
-    try:
-        LOG.info(f"REQUEST {request.args}")
-        wx_station_id = request.args['wx_station_id']
-    except Exception as ex:
-        LOG.error("Failed to find json in wx_report because {}".format(ex))
-
+def fetch_wx_report(wx_station_id, request):
     if not wx_station_id:
+        LOG.warning("No station id provided")
         return None
 
     url = (
@@ -194,6 +179,7 @@ def wx_report():
             timeout=60)
 
         if response.status_code == 200:
+            raw = response.text
             json_record = response.json()
             try:
                 decoded = aprs_parse(json_record.get('raw_report'))
@@ -210,19 +196,6 @@ def wx_report():
     except Exception as ex:
         LOG.error(ex)
         return None
-
-@app.route("/markers.js")
-def markers_js():
-    stations = _get_wx_stations()
-    LOG.warning(f"info? {_get_wx_stations.cache_info()}")
-    stations_str ="stations = {};"
-    if stations:
-        stations_str = (
-            f"stations = {json.dumps(stations)};"
-            "update_map(stations);"
-        )
-
-    return stations_str
 
 
 def fetch_requests():
@@ -254,75 +227,110 @@ def fetch_requests():
     return json.dumps(markers)
 
 
-@app.route("/requests")
-def get_requests():
-    return fetch_requests()
 
-
-@app.route("/")
-def index():
-    aprsd_stats = fetch_stats()
-    LOG.debug(aprsd_stats)
-    aprs_connection = (
-        "APRS-IS Server: <a href='http://status.aprs2.net' >"
-        "{}</a>".format(aprsd_stats["aprs-is"]["server"])
-    )
-
-    version = aprsd_stats["repeat"]["version"]
-    aprsd_version = aprsd_stats["aprsd"]["version"]
-    uptime = aprsd_stats["aprsd"].get("uptime")
-    return flask.render_template("index.html",
-                                 initial_stats=aprsd_stats,
-                                 aprs_connection=aprs_connection,
-                                 callsign='WXNOW',
-                                 version=version,
-                                 uptime=uptime,
-                                 aprsd_version=aprsd_version,
-                                 mapbox_token=CONF.web.mapbox_token
-                                 )
-
-
-@app.route("/about")
-def about():
-    aprsd_stats = fetch_stats()
-    aprs_connection = (
-        "APRS-IS Server: <a href='http://status.aprs2.net' >"
-        "{}</a>".format(aprsd_stats["aprs-is"]["server"])
-    )
-
-    version = aprsd_stats["repeat"]["version"]
-    aprsd_version = aprsd_stats["aprsd"]["version"]
-    uptime = aprsd_stats["aprsd"].get("uptime")
-    return flask.render_template("about.html",
-                                 initial_stats=aprsd_stats,
-                                 aprs_connection=aprs_connection,
-                                 callsign='REPEAT',
-                                 version=version,
-                                 uptime=uptime,
-                                 aprsd_version=aprsd_version,
-                                 mapbox_token=CONF.web.mapbox_token
-                                 )
-
-
-def create_app(config_file=None, log_level=None, gunicorn=False):
-    """Used for running under gunicorn."""
+def create_app () -> FastAPI:
     global app, LOG
 
-    if not config_file:
-        conf_file = utils.DEFAULT_CONFIG_FILE
-        config_file = ["--config-file", conf_file]
-    else:
-        config_file = ["--config-file", config_file]
+    #conf_file = utils.DEFAULT_CONFIG_FILE
+    conf_file = "config/aprsd_listen.conf"
+    config_file = ["--config-file", conf_file]
 
-    if not log_level:
-        log_level = "DEBUG"
+    log_level = "DEBUG"
 
     CONF(config_file, project='aprsd_repeat', version="1.0.0")
     python_logging.captureWarnings(True)
-    LOG = log.setup_logging(app, gunicorn=gunicorn)
-    # Dump all the config options now.
+    app = FastAPI()
+    LOG = log.setup_logging(app, gunicorn=True)
     CONF.log_opt_values(LOG, python_logging.DEBUG)
-    app = WhiteNoise(app, root="/app/web/static/html")
+
+    app.mount("/static", StaticFiles(directory="web/static"), name="static")
+    templates = Jinja2Templates(directory="web/templates")
+
+    @app.get("/", response_class=HTMLResponse)
+    async def index(request: Request):
+        aprsd_stats = fetch_stats()
+        LOG.debug(aprsd_stats)
+        aprs_connection = (
+            "APRS-IS Server: <a href='http://status.aprs2.net' >"
+            "{}</a>".format(aprsd_stats["aprs-is"]["server"])
+        )
+
+        version = aprsd_stats["repeat"]["version"]
+        aprsd_version = aprsd_stats["aprsd"]["version"]
+        uptime = aprsd_stats["aprsd"].get("uptime")
+        return templates.TemplateResponse(
+            request=request, name="index.html",
+            context={
+                "initial_stats": aprsd_stats,
+                "aprs_connection": aprs_connection,
+                "callsign": "WXNOW",
+                "version": version,
+                "uptime": uptime,
+                "aprsd_version": aprsd_version,
+                "mapbox_token": CONF.web.mapbox_token
+            }
+        )
+
+    @app.get("/about", response_class=HTMLResponse)
+    async def about(request: Request):
+        aprsd_stats = fetch_stats()
+        aprs_connection = (
+            "APRS-IS Server: <a href='http://status.aprs2.net' >"
+            "{}</a>".format(aprsd_stats["aprs-is"]["server"])
+        )
+
+        version = aprsd_stats["repeat"]["version"]
+        aprsd_version = aprsd_stats["aprsd"]["version"]
+        uptime = aprsd_stats["aprsd"].get("uptime")
+        return templates.TemplateResponse(
+            request=request, name="about.html",
+            context={
+                "initial_stats": aprsd_stats,
+                "aprs_connection": aprs_connection,
+                "callsign": "WXNOW",
+                "version": version,
+                "uptime": uptime,
+                "aprsd_version": aprsd_version,
+                "mapbox_token": CONF.web.mapbox_token
+            }
+        )
+
+    @app.get("/wx_report/{station_id}", response_class=JSONResponse)
+    async def wx_report(station_id: str, request: Request):
+        LOG.info(f"Get wx_report for station_id {station_id}")
+        report = fetch_wx_report(station_id, request)
+        return report
+
+    @app.get("/stations")
+    async def get_stations():
+        stations = _get_wx_stations()
+        LOG.info(f"get_stations {len(stations)}")
+        return json.dumps(stations)
+
+    @app.get("/stats")
+    async def stats():
+        return fetch_stats()
+
+    @app.get("/requests")
+    async def get_requests():
+        return fetch_requests()
+
+    @app.get("/markers.js")
+    async def markers_js(response: Response):
+        stations = _get_wx_stations()
+        LOG.warning(f"info? {_get_wx_stations.cache_info()}")
+        LOG.warning(f"stations {len(stations)}")
+        response.headers["Content-Type"] = "application/javascript"
+        stations_str = "stations = {};"
+        if stations:
+            stations_str = (
+                f"stations = {json.dumps(stations)};\n"
+                "$(document).ready(function() {console.log('call update_map');update_map(stations);});"
+            )
+
+        #return stations_str
+        return Response(stations_str, media_type="application/javascript")
+
     return app
 
 
@@ -358,22 +366,3 @@ def main(config_file, log_level):
     app = create_app(config_file=config_file, log_level=log_level,
                      gunicorn=False)
     app.run(host="0.0.0.0", port=8080, debug=True)
-
-
-def runit():
-    global app
-    print("runit!")
-    app = create_app(log_level="DEBUG",
-                     gunicorn=False)
-    app.run(host="0.0.0.0", port=8080, debug=True)
-
-
-
-if __name__ == "app.main":
-    main()
-    #runit()
-
-
-if __name__ == "__main__" or __name__ == "app.main":
-    # Only for debugging while developing
-    main()
