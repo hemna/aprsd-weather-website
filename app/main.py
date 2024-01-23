@@ -10,7 +10,6 @@ from aprslib import parse as aprs_parse
 from cachetools import cached, TTLCache
 from geojson import Feature, Point
 from oslo_config import cfg
-from whitenoise import WhiteNoise
 from aprsd.rpc import client as aprsd_rpc_client
 
 from fastapi import FastAPI, Request, Response
