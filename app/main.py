@@ -198,7 +198,7 @@ def create_app () -> FastAPI:
     global app, LOG
 
     #conf_file = utils.DEFAULT_CONFIG_FILE
-    conf_file = "config/aprsd_listen.conf"
+    conf_file = "config/aprsd_weather.conf"
     config_file = ["--config-file", conf_file]
 
     log_level = "DEBUG"
