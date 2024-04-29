@@ -16,7 +16,7 @@ RUN pip freeze
 COPY ./app /app
 RUN chmod 755 /app/run.sh
 
-VOLUME ["/app/config"]
+VOLUME ["/config"]
 
 WORKDIR /app
 #CMD ["gunicorn", "--conf", "gunicorn_conf.py", "--bind 0.0.0.0:80", "\"main:create_app(config_file='config/aprsd_repeat.conf')\""]

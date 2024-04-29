@@ -1,10 +1,11 @@
 services:
   web:
     image: hemna6969/wxnow-website:latest
+    container_name: aprsd-wxnow-website
     volumes:
       - ./app:/app
       - ./logs:/logs
-      - ./config:/app/config
+      - /home/waboring/docker/aprsd-wxnow/app/config:/config
     ports:
       - 4001:80
     restart: unless-stopped
