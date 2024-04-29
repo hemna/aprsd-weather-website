@@ -11,5 +11,6 @@ cachetools
 pyproj
 uvicorn[standard]==0.20.0
 gunicorn==20.1.0
-fastapi[all]==0.88.0
+#fastapi[all]==0.88.0
+fastapi[all]==0.109.2
 jinja2

@@ -10,7 +10,8 @@ from aprslib import parse as aprs_parse
 from cachetools import cached, TTLCache
 from geojson import Feature, Point
 from oslo_config import cfg
-from aprsd.rpc import client as aprsd_rpc_client
+from aprsd.threads import stats as stats_threads
+from aprsd.utils import json as aprsd_json
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -70,56 +71,22 @@ app = FastAPI(
 
 
 def fetch_stats():
-    stats = None
-    try:
-        stats = aprsd_rpc_client.RPCClient().get_stats_dict()
-    except Exception as ex:
-        LOG.error(ex)
+    stats_obj = stats_threads.StatsStore()
+    stats_obj.load()
+    now = datetime.datetime.now()
+    time_format = "%m-%d-%Y %H:%M:%S"
+    stats_data = stats_obj.data
+    seen_list = stats_data.get("SeenList", [])
+    for call in seen_list:
+        # add a ts 2021-11-01 16:18:11.631723
+        date = datetime.datetime.strptime(str(seen_list[call]['last']), "%Y-%m-%d %H:%M:%S.%f")
+        seen_list[call]["ts"] = int(datetime.datetime.timestamp(date))
+    stats = {
+        "time": now.strftime(time_format),
+        "stats": stats_data,
+    }
 
-    if not stats:
-        stats = {
-            "aprsd": {
-                "seen_list": [],
-                "version": "unknown",
-            },
-            "aprs-is": {"server": ""},
-            "messages": {
-                "sent": 0,
-                "received": 0,
-            },
-            "email": {
-                "sent": 0,
-                "received": 0,
-            },
-            "seen_list": {
-                "sent": 0,
-                "received": 0,
-            },
-            "repeat": {
-                "version": "unknown",
-            }
-        }
-    #LOG.debug(f"stats {stats}")
-    stats['repeat'] = {'version': 'unknown'}
-    if "aprsd" in stats:
-        if "watch_list" in stats["aprsd"]:
-            del stats["aprsd"]["watch_list"]
-    if "email" in stats:
-        del stats["email"]
-    if "messages" in stats:
-        del stats["messages"]
-    if 'repeat' not in stats:
-        stats['repeat'] = {'version':'dev'}
-
-    if "aprsd" in stats:
-        if "seen_list" in stats["aprsd"] and "REPEAT" in stats["aprsd"]["seen_list"]:
-            del stats["aprsd"]["seen_list"]["REPEAT"]
-
-        seen_list = stats["aprsd"]["seen_list"]
-        for call in seen_list:
-            # add a ts 2021-11-01 16:18:11.631723
-            date = datetime.datetime.strptime(seen_list[call]['last'], "%Y-%m-%d %H:%M:%S.%f")
-            seen_list[call]["ts"] = int(datetime.datetime.timestamp(date))
+    LOG.warning(stats)
     return stats
 
 
@@ -251,16 +218,16 @@ def create_app () -> FastAPI:
         LOG.debug(aprsd_stats)
         aprs_connection = (
             "APRS-IS Server: <a href='http://status.aprs2.net' >"
-            "{}</a>".format(aprsd_stats["aprs-is"]["server"])
+            "{}</a>".format(aprsd_stats["stats"]["APRSClientStats"]["server_string"])
         )
 
-        version = aprsd_stats["repeat"]["version"]
-        aprsd_version = aprsd_stats["aprsd"]["version"]
-        uptime = aprsd_stats["aprsd"].get("uptime")
+        version = aprsd_stats["stats"]["APRSDStats"]["version"]
+        aprsd_version = aprsd_stats["stats"]["APRSDStats"]["version"]
+        uptime = aprsd_stats["stats"]["APRSDStats"].get("uptime")
         return templates.TemplateResponse(
             request=request, name="index.html",
             context={
-                "initial_stats": aprsd_stats,
+                "initial_stats": json.dumps(aprsd_stats, cls=aprsd_json.SimpleJSONEncoder),
                 "aprs_connection": aprs_connection,
                 "callsign": "WXNOW",
                 "version": version,
@@ -284,7 +251,7 @@ def create_app () -> FastAPI:
         return templates.TemplateResponse(
             request=request, name="about.html",
             context={
-                "initial_stats": aprsd_stats,
+                "initial_stats": json.dumps(aprsd_stats, cls=aprsd_json.SimpleJSONEncoder),
                 "aprs_connection": aprs_connection,
                 "callsign": "WXNOW",
                 "version": version,
@@ -308,7 +275,7 @@ def create_app () -> FastAPI:
 
     @app.get("/stats")
     async def stats():
-        return fetch_stats()
+        json.dumps(fetch_stats(), cls=aprsd_json.SimpleJSONEncoder)
 
     @app.get("/requests")
     async def get_requests():
