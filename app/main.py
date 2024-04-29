@@ -61,7 +61,6 @@ web_opts = [
 
 LOG = None
 CONF.register_opts(web_opts, group="web")
-CONF.register_opts(aprsd.conf.common.rpc_opts, group="rpc_settings")
 API_KEY_HEADER = "X-Api-Key"
 app = FastAPI(
     static_url_path="/static",
