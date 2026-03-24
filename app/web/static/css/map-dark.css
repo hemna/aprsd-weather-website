@@ -1,0 +1,147 @@
+/* app/web/static/css/map-dark.css */
+/* Dark mode styles for map popups and controls */
+
+/* Leaflet popup dark styling */
+[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background: var(--popup-bg);
+  color: var(--text-primary);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+[data-theme="dark"] .leaflet-popup-content {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .leaflet-popup-content a {
+  color: var(--link-color);
+}
+
+[data-theme="dark"] .leaflet-popup-tip {
+  background: var(--popup-bg);
+}
+
+/* Leaflet control buttons */
+[data-theme="dark"] .leaflet-control-zoom a,
+[data-theme="dark"] .leaflet-control-fullscreen a,
+[data-theme="dark"] .leaflet-control-layers-toggle {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-control-zoom a:hover,
+[data-theme="dark"] .leaflet-control-fullscreen a:hover {
+  background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .leaflet-bar a {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-bar a:hover {
+  background-color: var(--bg-elevated);
+}
+
+/* Layer control dropdown */
+[data-theme="dark"] .leaflet-control-layers {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .leaflet-control-layers-expanded {
+  background: var(--card-bg);
+}
+
+[data-theme="dark"] .leaflet-control-layers label {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .leaflet-control-layers-separator {
+  border-top-color: var(--border-color);
+}
+
+/* MiniMap control */
+[data-theme="dark"] .leaflet-control-minimap {
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-control-minimap-toggle-display {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+/* Attribution */
+[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(13, 17, 23, 0.8);
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .leaflet-control-attribution a {
+  color: var(--link-color);
+}
+
+/* Rainviewer control */
+[data-theme="dark"] .leaflet-control-rainviewer {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .leaflet-control-rainviewer button {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-control-rainviewer button:hover {
+  background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .leaflet-control-rainviewer-slider {
+  background: var(--bg-tertiary);
+}
+
+/* Marker cluster styling */
+[data-theme="dark"] .marker-cluster-small {
+  background-color: rgba(88, 166, 255, 0.6);
+}
+
+[data-theme="dark"] .marker-cluster-small div {
+  background-color: rgba(88, 166, 255, 0.8);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .marker-cluster-medium {
+  background-color: rgba(88, 166, 255, 0.6);
+}
+
+[data-theme="dark"] .marker-cluster-medium div {
+  background-color: rgba(88, 166, 255, 0.8);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .marker-cluster-large {
+  background-color: rgba(88, 166, 255, 0.6);
+}
+
+[data-theme="dark"] .marker-cluster-large div {
+  background-color: rgba(88, 166, 255, 0.8);
+  color: var(--text-primary);
+}
+
+/* Weather popup specific styling */
+[data-theme="dark"] .leaflet-popup-content table {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .leaflet-popup-content th {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .leaflet-popup-content td {
+  color: var(--text-primary);
+}
