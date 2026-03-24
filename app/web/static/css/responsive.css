@@ -1,0 +1,185 @@
+/* app/web/static/css/responsive.css */
+/* Mobile responsive styles for WXNOW */
+
+/* Base mobile-first styles */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Sidebar responsive behavior */
+@media (max-width: 768px) {
+  /* Make sidebar full width on mobile when open */
+  .leaflet-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .leaflet-sidebar.collapsed {
+    width: 40px !important;
+  }
+  
+  .leaflet-sidebar-content {
+    width: 100% !important;
+  }
+  
+  .leaflet-sidebar-pane {
+    padding: 10px !important;
+  }
+  
+  /* Adjust header text size */
+  .leaflet-sidebar-header h1 {
+    font-size: 1rem !important;
+  }
+  
+  /* Make requests list more touch-friendly */
+  #requests_list .list-group-item {
+    padding: 12px 15px;
+    min-height: 44px; /* Touch target minimum */
+  }
+  
+  /* Adjust badges layout */
+  #badges {
+    text-align: center;
+  }
+  
+  #badges img {
+    margin: 5px;
+  }
+  
+  /* Theme toggle in header needs adjustment */
+  .theme-toggle {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 992px) {
+  .leaflet-sidebar {
+    width: 300px !important;
+  }
+  
+  .leaflet-sidebar-header h1 {
+    font-size: 1rem !important;
+  }
+}
+
+/* Theme toggle positioning */
+.theme-toggle-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .theme-toggle-container {
+    top: 5px;
+    right: 5px;
+  }
+  
+  .theme-toggle {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+/* Popup responsive */
+@media (max-width: 768px) {
+  .leaflet-popup-content-wrapper {
+    max-width: 280px !important;
+  }
+  
+  .leaflet-popup-content {
+    font-size: 13px;
+    max-width: 260px !important;
+  }
+}
+
+/* Touch-friendly controls */
+@media (max-width: 768px) {
+  .leaflet-control-zoom a,
+  .leaflet-control-fullscreen a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 18px !important;
+  }
+  
+  .leaflet-control-layers-toggle {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .leaflet-bar a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+  }
+}
+
+/* Hide minimap on mobile */
+@media (max-width: 768px) {
+  .leaflet-control-minimap {
+    display: none !important;
+  }
+}
+
+/* Rainviewer control mobile */
+@media (max-width: 768px) {
+  .leaflet-control-rainviewer {
+    max-width: 200px;
+    font-size: 12px;
+  }
+  
+  .leaflet-control-rainviewer button {
+    padding: 4px 8px;
+  }
+}
+
+/* About page responsive */
+@media (max-width: 768px) {
+  #header {
+    padding: 10px !important;
+  }
+  
+  #header h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .ui.tabular.menu {
+    flex-wrap: wrap;
+  }
+  
+  .ui.tabular.menu .item {
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 12px;
+    padding: 8px !important;
+  }
+  
+  .ui.bottom.attached.segment {
+    padding: 10px !important;
+  }
+  
+  iframe {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16/9;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1200px) {
+  .leaflet-sidebar {
+    width: 400px !important;
+  }
+}
