@@ -1,5 +1,13 @@
-<html>
+<!DOCTYPE html>
+<html data-theme="dark">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>APRS REPEAT Service - About</title>
+    
+    <!-- Theme CSS (load early to prevent flash) -->
+    <link rel="stylesheet" href="/static/css/theme.css">
+    
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <link rel="stylesheet"
           href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
@@ -12,11 +20,20 @@
           href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <script src="/static/js/jquery.tablesorter.combined.js"></script>
+    
+    <!-- Font Awesome for theme toggle icons -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
 
     <link rel="stylesheet" href="/static/css/index.css">
     <link rel="stylesheet" href="/static/css/prism.css">
+    
+    <!-- Dark mode CSS -->
+    <link rel="stylesheet" href="/static/css/about-dark.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    
     <script src="/static/js/main.js"></script>
     <script src="/static/js/prism.js"></script>
+    <script src="/static/js/theme-toggle.js"></script>
     <script defer data-domain="aprs-repeat.hemna.com" src="http://cloud.hemna.com:7000/js/script.js"></script>
 
     <script type="text/javascript">
@@ -43,6 +60,12 @@
 </head>
 
 <body>
+
+<!-- Theme toggle button -->
+<button class="theme-toggle" aria-label="Switch to light mode" title="Toggle dark/light mode">
+    <i class="fa fa-sun-o theme-toggle-light"></i>
+    <i class="fa fa-moon-o theme-toggle-dark"></i>
+</button>
 
 <div class="ui">
     <a href="https://www.patreon.com/WB4BOR?fan_landing=true"><img

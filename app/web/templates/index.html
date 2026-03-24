@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>APRS Nearest Weather Live map</title>
     <meta name="lang" content="en" />
     <meta charset="utf-8" />
+    
+    <!-- Theme CSS (load early to prevent flash) -->
+    <link rel="stylesheet" href="/static/css/theme.css">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
@@ -59,6 +62,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mwasil/Leaflet.Rainviewer/leaflet.rainviewer.css"/>
     <script src="https://cdn.jsdelivr.net/gh/mwasil/Leaflet.Rainviewer/leaflet.rainviewer.js"></script>
 
+    <!-- Dark mode CSS -->
+    <link rel="stylesheet" href="/static/css/sidebar-dark.css">
+    <link rel="stylesheet" href="/static/css/map-dark.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
 
     <style>
         body {
@@ -78,6 +85,7 @@
         }
     </style>
     <script src="/static/js/map_leaflet.js"></script>
+    <script src="/static/js/theme-toggle.js"></script>
     <script defer src="/markers.js"></script>
     <script type="text/javascript">
             var initial_stats = {{ initial_stats|tojson|safe }};
@@ -88,6 +96,12 @@
     </script>
 </head>
 <body>
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" aria-label="Switch to light mode" title="Toggle dark/light mode">
+        <i class="fa fa-sun-o theme-toggle-light"></i>
+        <i class="fa fa-moon-o theme-toggle-dark"></i>
+    </button>
+
     <!-- optionally define the sidebar content via HTML markup -->
     <div id="sidebar" class="leaflet-sidebar collapsed">
 
@@ -141,21 +155,35 @@
     <div id="map"></div>
 
     <!-- <a href="https://github.com/nickpeihl/leaflet-sidebar-v2/"><img style="position: fixed; top: 0; right: 0; border: 0; z-index: 1000;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a> //-->
-    <a href="https://github.com/nickpeihl/leaflet-sidebar-v2/"><i class="fa fa-github"><>/i></a>
 
     <script src="/static/js/leaflet-sidebar.min.js"></script>
     <script>
-        osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-        osmAttrib = '© OpenStreetMap'
+        // Light tiles (OSM)
+        var osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        var osmAttrib = '&copy; OpenStreetMap';
         var osm = L.tileLayer(osmUrl, {
             maxZoom: 19,
             attribution: osmAttrib
         });
+        
+        // Dark tiles (CartoDB Dark Matter)
+        var darkUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        var darkAttrib = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+        var darkTiles = L.tileLayer(darkUrl, {
+            maxZoom: 19,
+            attribution: darkAttrib,
+            subdomains: 'abcd'
+        });
+        
+        // Choose default based on theme
+        var currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        var defaultLayer = currentTheme === 'dark' ? darkTiles : osm;
+        
         // standard leaflet map setup
         var map = L.map('map', {
            center: [37.344, -78.84933],
            zoom: 5,
-           layers: [osm]
+           layers: [defaultLayer]
         });
 
         const mbAttr = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>';
@@ -166,15 +194,39 @@
         const terrain = L.tileLayer(mbUrl, {id: 'mapbox/mapbox-terrain-v2', tileSize: 512, zoomOffset: -1, attribution: mbAttr});
 
         var baseLayers = {
+            "Dark (CartoDB)": darkTiles,
             "OpenStreetMap": osm,
             "Mapbox Streets": streets,
             "Mapbox Satellite": satellite,
             "Mapbox Terrain": terrain
         };
         const layerControl = L.control.layers(baseLayers).addTo(map);
+        
+        // Theme change listener - switch map tiles when theme changes
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'data-theme') {
+                    var theme = document.documentElement.getAttribute('data-theme');
+                    if (theme === 'dark' && !map.hasLayer(darkTiles)) {
+                        map.removeLayer(osm);
+                        map.removeLayer(streets);
+                        map.removeLayer(satellite);
+                        map.removeLayer(terrain);
+                        map.addLayer(darkTiles);
+                    } else if (theme === 'light' && !map.hasLayer(osm)) {
+                        map.removeLayer(darkTiles);
+                        map.addLayer(osm);
+                    }
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
 
-        var osm2 = new L.tileLayer(osmUrl, {minZoom: 0, maxZoom: 13, attribution: osmAttrib });
-        var miniMap = new L.Control.MiniMap(osm2, { toggleDisplay: true }).addTo(map);
+        // Minimap - use dark or light tiles based on theme
+        var miniMapLayer = currentTheme === 'dark' 
+            ? new L.tileLayer(darkUrl, {minZoom: 0, maxZoom: 13, attribution: darkAttrib, subdomains: 'abcd'})
+            : new L.tileLayer(osmUrl, {minZoom: 0, maxZoom: 13, attribution: osmAttrib});
+        var miniMap = new L.Control.MiniMap(miniMapLayer, { toggleDisplay: true }).addTo(map);
 
         // create a fullscreen button and add it to the map
         L.control.fullscreen({
