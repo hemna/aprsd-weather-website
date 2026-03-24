@@ -1,0 +1,109 @@
+/* app/web/static/css/sidebar-dark.css */
+/* Dark mode overrides for Leaflet sidebar */
+
+/* Sidebar container */
+[data-theme="dark"] .leaflet-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-sidebar-content {
+  background: var(--sidebar-bg);
+}
+
+[data-theme="dark"] .leaflet-sidebar-pane {
+  background: var(--sidebar-bg);
+  color: var(--text-primary);
+}
+
+/* Sidebar header */
+[data-theme="dark"] .leaflet-sidebar-header {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-sidebar-header h1 {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+[data-theme="dark"] .leaflet-sidebar-close {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .leaflet-sidebar-close:hover {
+  color: var(--text-primary);
+}
+
+/* Sidebar tabs */
+[data-theme="dark"] .leaflet-sidebar-tabs {
+  background: var(--bg-tertiary);
+  border-right: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-sidebar-tabs > ul > li > a {
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-sidebar-tabs > ul > li > a:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .leaflet-sidebar-tabs > ul > li.active > a {
+  color: var(--accent-blue);
+  background: var(--sidebar-bg);
+}
+
+/* Request list items */
+[data-theme="dark"] .list-group-item {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .list-group-item:hover {
+  background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .list-group-item a {
+  color: var(--link-color);
+}
+
+/* Badges area */
+[data-theme="dark"] #badges {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] #badges a {
+  color: var(--link-color);
+}
+
+[data-theme="dark"] #badges .h6 {
+  color: var(--text-secondary);
+}
+
+/* Version and status text */
+[data-theme="dark"] #aprs_connection {
+  color: var(--accent-blue) !important;
+}
+
+[data-theme="dark"] #uptime {
+  color: var(--text-secondary);
+}
+
+/* Connected callsign - override inline styles */
+[data-theme="dark"] .leaflet-sidebar-pane span[style*="green"] {
+  color: var(--accent-green) !important;
+}
+
+[data-theme="dark"] .leaflet-sidebar-pane span[style*="blue"] {
+  color: var(--accent-blue) !important;
+}
+
+/* Scrollable requests container */
+[data-theme="dark"] #requests {
+  border-top: 1px solid var(--border-color);
+}
