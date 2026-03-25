@@ -155,3 +155,52 @@ a:hover {
     padding: 8px 12px;
   }
 }
+
+/* Callsign and label styling */
+.callsign-primary {
+  color: #2ea44f; /* GitHub green - visible in both modes */
+  font-weight: 600;
+}
+
+[data-theme="dark"] .callsign-primary {
+  color: #3fb950; /* Brighter green for dark mode */
+}
+
+.callsign-secondary {
+  color: #0969da;
+}
+
+[data-theme="dark"] .callsign-secondary {
+  color: #58a6ff; /* Bright blue for dark mode */
+}
+
+.text-label {
+  color: var(--text-secondary);
+}
+
+/* Popup callsign styling */
+.popup-callsign {
+  color: #0969da;
+  font-weight: bold;
+}
+
+[data-theme="dark"] .popup-callsign {
+  color: #58a6ff;
+}
+
+.popup-path-label {
+  color: #0969da;
+  font-weight: bold;
+}
+
+[data-theme="dark"] .popup-path-label {
+  color: #58a6ff;
+}
+
+.popup-station-list {
+  color: #656d76;
+}
+
+[data-theme="dark"] .popup-station-list {
+  color: #8b949e;
+}

@@ -43,7 +43,7 @@ function get_station_popup_html(station_data, report_data) {
     popup_html += "<div style='clear:left;background-color:#0000ff;opacity:0.6;height: 2px';></div>"
     popup_html += "<div class-'ui tiny text'>"+lat_str + " " + lon_str + "\n<br>";
     popup_html += "Report Time: " + report_data["time"] + "\n";
-    popup_html += "<div style='width:300px;word-wrap: break-word'><small>[<b style='margin:0px;padding:0px;color:blue;'>Path</b>]&nbsp;" + report_data['decoded']['path']+ "</small></div><br>";
+    popup_html += "<div style='width:300px;word-wrap: break-word'><small>[<b class='popup-path-label'>Path</b>]&nbsp;" + report_data['decoded']['path']+ "</small></div><br>";
     popup_html += "Comment: " + station_data["properties"]["comment"]+ "\n<br>";
     popup_html += "Temperature: <b>" + temperature + "°F </b>\n<br>";
     popup_html += "Pressure: <b>" + report_data["pressure"] + "hPa</b>&nbsp;&nbsp;\n";
@@ -99,10 +99,10 @@ function add_request(data) {
     var longitude = data['properties']['longitude']
     var latitude = data['properties']['latitude']
     marker_id = data['id']
-    popup_html = "<b style='color: blue;'>" + data["properties"]["callsign"] + "</b>";
-    popup_html += "&nbsp;-&nbsp;<b style='color: green'>n " + data["properties"]["count"] + " </b>";
+    popup_html = "<b class='popup-callsign'>" + data["properties"]["callsign"] + "</b>";
+    popup_html += "&nbsp;-&nbsp;<b style='color: var(--accent-green, green)'>n " + data["properties"]["count"] + " </b>";
     popup_html += "<p>" + data["properties"]["created"] + "</p>";
-    popup_html += "<p style='color: grey'>" + data["properties"]["station_callsigns"] + "</p>";
+    popup_html += "<p class='popup-station-list'>" + data["properties"]["station_callsigns"] + "</p>";
 
     request_html = "<a style='padding-bottom: 0px;' href='#' id='"+marker_id+"' class='list-group-item list-group-item-action'>"
     request_html += popup_html;
