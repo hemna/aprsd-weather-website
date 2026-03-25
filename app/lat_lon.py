@@ -365,11 +365,11 @@ def string2geocoord(coord_str, coord_class, format_str="D"):
         coord_str = " ".join((coord_str[new_coord_start:], coord_str[0]))
     format_elements = format_str.split("%")
     # E.g. ' ', '_' or ', ' characters
-    separators = [sep for sep in format_elements if sep not in format2value.keys()]
+    separators = [sep for sep in format_elements if sep not in format2value]
     # Dummy separator for the final part of the coord_str
     separators.append("%")
     # E.g. 'D', 'm', or 'S' characters
-    formatters = [form for form in format_elements if form in format2value.keys()]
+    formatters = [form for form in format_elements if form in format2value]
     for form, sep in zip(formatters, separators):
         coord_elements = coord_str.split(sep)
         # Set the coordinate variable (e.g. 'self.degree' with the

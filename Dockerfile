@@ -1,16 +1,21 @@
-FROM hemna6969/uvicorn-gunicorn-fastapi:python-3.10
+FROM python:3.11-slim
 
 # If STATIC_INDEX is 1, serve / with /static/index.html directly (or the static URL configured)
 # ENV STATIC_INDEX 1
 # ENV STATIC_INDEX 0
 
-ENV STATIC_PATH /app/web/static
+ENV STATIC_PATH=/app/web/static
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY ./requirements.txt /app/requirements.txt
 
 RUN pip install -U pip
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
-RUN which gunicorn
 RUN pip freeze
 
 COPY ./app /app

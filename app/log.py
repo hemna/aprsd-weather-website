@@ -1,17 +1,16 @@
-from datetime import datetime
 import logging
+from collections.abc import Callable, Iterable
+from datetime import datetime
 from logging import LogRecord
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING
 
-from flask.logging import default_handler
+from oslo_config import cfg
+from oslo_log import log as oslo_logging
 from rich._log_render import LogRender
 from rich.logging import RichHandler
 from rich.text import Text, TextType
 from rich.traceback import Traceback
-from oslo_log import log as oslo_logging
-from oslo_config import cfg
-
 
 if TYPE_CHECKING:
     from rich.console import Console, ConsoleRenderable, RenderableType
@@ -39,7 +38,7 @@ class APRSDRichLogRender(LogRender):
     def __init__(
         self, *args,
         show_thread: bool = False,
-        thread_width: Optional[int] = 10,
+        thread_width: int | None = 10,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -50,13 +49,13 @@ class APRSDRichLogRender(LogRender):
             self,
             console: "Console",
             renderables: Iterable["ConsoleRenderable"],
-            log_time: Optional[datetime] = None,
-            time_format: Optional[Union[str, FormatTimeCallable]] = None,
+            log_time: datetime | None = None,
+            time_format: str | FormatTimeCallable | None = None,
             level: TextType = "",
-            path: Optional[str] = None,
-            line_no: Optional[int] = None,
-            link_path: Optional[str] = None,
-            thread_name: Optional[str] = None,
+            path: str | None = None,
+            line_no: int | None = None,
+            link_path: str | None = None,
+            thread_name: str | None = None,
     ) -> "Table":
         from rich.containers import Renderables
         from rich.table import Table
@@ -73,7 +72,7 @@ class APRSDRichLogRender(LogRender):
         output.add_column(ratio=1, style="log.message", overflow="fold")
         if self.show_path and path:
             output.add_column(style="log.path")
-        row: List["RenderableType"] = []
+        row: list[RenderableType] = []
         if self.show_time:
             log_time = log_time or console.get_datetime()
             time_format = time_format or self.time_format
@@ -119,7 +118,7 @@ class APRSDRichHandler(RichHandler):
     def __init__(
         self, *args,
         show_thread: bool = True,
-        thread_width: Optional[int] = 10,
+        thread_width: int | None = 10,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -139,7 +138,7 @@ class APRSDRichHandler(RichHandler):
 
     def render(
         self, *, record: LogRecord,
-        traceback: Optional[Traceback],
+        traceback: Traceback | None,
         message_renderable: "ConsoleRenderable",
     ) -> "ConsoleRenderable":
         """Render log for display.
@@ -175,7 +174,7 @@ class APRSDRichHandler(RichHandler):
         return log_renderable
 
 
-def setup_logging(flask_app, gunicorn=False):
+def setup_logging(app, gunicorn=False):
     global LOG
     """Prepare Oslo Logging (2 or 3 steps)
 
@@ -214,7 +213,7 @@ def setup_logging(flask_app, gunicorn=False):
         exist_dict[e_arr[0]] = e_arr[1]
 
     for key in exist_dict:
-        new.append("{}={}".format(key, exist_dict[key]))
+        new.append(f"{key}={exist_dict[key]}")
 
     oslo_logging.set_defaults(default_log_levels=new)
 
@@ -229,7 +228,6 @@ def setup_logging(flask_app, gunicorn=False):
 
     if gunicorn:
         LOG = logging.getLogger('gunicorn.error')
-        # g_logger.removeHandler(default_handler)
         for h in LOG.handlers:
             LOG.removeHandler(h)
         LOG.setLevel(logging.DEBUG)
@@ -239,13 +237,12 @@ def setup_logging(flask_app, gunicorn=False):
         LOG.setLevel(log_level)
         LOG.addHandler(rh)
 
-        flask_log = logging.getLogger("werkzeug")
-        flask_app.logger.removeHandler(default_handler)
-        # flask_log.removeHandler(default_handler)
-        for h in flask_log.handlers:
-            flask_log.removeHandler(h)
-        flask_log.setLevel(logging.DEBUG)
-        flask_log.addHandler(rh)
+        # For uvicorn/FastAPI, configure uvicorn loggers
+        uvicorn_log = logging.getLogger("uvicorn")
+        for h in uvicorn_log.handlers:
+            uvicorn_log.removeHandler(h)
+        uvicorn_log.setLevel(logging.DEBUG)
+        uvicorn_log.addHandler(rh)
 
     return LOG
 
