@@ -94,30 +94,55 @@ function add_marker(station_data) {
     markers.addLayer(marker);
 }
 
+// Track the current request marker so we can remove it on next click
+var currentRequestMarker = null;
+
 function add_request(data) {
     // console.log(data);
     var longitude = data['properties']['longitude']
     var latitude = data['properties']['latitude']
-    marker_id = data['id']
-    popup_html = "<b class='popup-callsign'>" + data["properties"]["callsign"] + "</b>";
-    popup_html += "&nbsp;-&nbsp;<b style='color: var(--accent-green, green)'>n " + data["properties"]["count"] + " </b>";
-    popup_html += "<p>" + data["properties"]["created"] + "</p>";
-    popup_html += "<p class='popup-station-list'>" + data["properties"]["station_callsigns"] + "</p>";
+    var marker_id = data['id']
+    var callsign = data["properties"]["callsign"];
+    var count = data["properties"]["count"];
+    var created = data["properties"]["created"];
+    var station_callsigns = data["properties"]["station_callsigns"];
+    
+    // Popup shows the requesting station info
+    var popup_html = "<b class='popup-callsign'>" + callsign + "</b>";
+    popup_html += "&nbsp;-&nbsp;<b style='color: var(--accent-green, green)'>n " + count + " </b>";
+    popup_html += "<p>" + created + "</p>";
+    popup_html += "<p class='popup-station-list'>Nearby WX: " + station_callsigns + "</p>";
 
-    request_html = "<a style='padding-bottom: 0px;' href='#' id='"+marker_id+"' class='list-group-item list-group-item-action'>"
+    var request_html = "<a style='padding-bottom: 0px;' href='#' id='req_"+marker_id+"' class='list-group-item list-group-item-action'>"
     request_html += popup_html;
     request_html += "</a>";
     $('#requests_list').append(request_html);
-    $('#'+marker_id).click(function() {
-      coords = [data["properties"]["latitude"], data["properties"]["longitude"]];
+    
+    $('#req_'+marker_id).click(function() {
+      // Remove previous request marker if exists
+      if (currentRequestMarker) {
+        map.removeLayer(currentRequestMarker);
+      }
+      
+      var coords = [latitude, longitude];
       var redMarker = L.ExtraMarkers.icon({
-        icon: 'fa-walkie-talkie',
+        icon: 'fa-broadcast-tower',
         markerColor: 'red',
         shape: 'square',
-        prefix: 'fa-solid'
+        prefix: 'fa'
       });
-      L.marker([latitude, longitude], {icon: redMarker}).bindPopup(popup_html).addTo(map);
+      
+      // Create marker, add to map, and open popup
+      currentRequestMarker = L.marker(coords, {icon: redMarker})
+        .bindPopup(popup_html)
+        .addTo(map);
+      
       map.setView(coords, 11);
+      
+      // Open the popup after a short delay to ensure map has moved
+      setTimeout(function() {
+        currentRequestMarker.openPopup();
+      }, 300);
     });
 }
 
