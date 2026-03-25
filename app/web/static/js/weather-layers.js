@@ -129,7 +129,7 @@ var RainViewer = {
         }
         this.isPlaying = true;
         var playBtn = document.getElementById('radar-play-btn');
-        if (playBtn) playBtn.innerHTML = '<i class="fa fa-pause"></i>';
+        if (playBtn) playBtn.textContent = 'Pause';
         console.log('RainViewer: Starting animation');
         this.animate();
     },
@@ -141,7 +141,7 @@ var RainViewer = {
             this.animationTimer = null;
         }
         var playBtn = document.getElementById('radar-play-btn');
-        if (playBtn) playBtn.innerHTML = '<i class="fa fa-play"></i>';
+        if (playBtn) playBtn.textContent = 'Play';
         console.log('RainViewer: Stopped animation');
     },
     
@@ -313,12 +313,12 @@ L.Control.WeatherLayers = L.Control.extend({
         
         // RainViewer Section
         html += '<div class="weather-section">';
-        html += '<div class="weather-section-title"><i class="fa fa-tint"></i> Weather Radar</div>';
+        html += '<div class="weather-section-title">Weather Radar</div>';
         html += '<div class="radar-controls">';
-        html += '<button id="radar-toggle" class="weather-btn" title="Toggle Radar"><i class="fa fa-eye"></i></button>';
-        html += '<button id="radar-prev" class="weather-btn" title="Previous"><i class="fa fa-step-backward"></i></button>';
-        html += '<button id="radar-play-btn" class="weather-btn" title="Play/Pause"><i class="fa fa-play"></i></button>';
-        html += '<button id="radar-next" class="weather-btn" title="Next"><i class="fa fa-step-forward"></i></button>';
+        html += '<button id="radar-toggle" class="weather-btn" title="Toggle Radar">Show</button>';
+        html += '<button id="radar-prev" class="weather-btn" title="Previous">&lt;</button>';
+        html += '<button id="radar-play-btn" class="weather-btn" title="Play/Pause">Play</button>';
+        html += '<button id="radar-next" class="weather-btn" title="Next">&gt;</button>';
         html += '<span id="radar-timestamp" class="radar-time">--:--</span>';
         html += '</div>';
         html += '</div>';
