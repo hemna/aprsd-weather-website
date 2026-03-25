@@ -1,6 +1,11 @@
 /* app/web/static/css/map-dark.css */
 /* Dark mode styles for map popups and controls */
 
+/* Fix zoom control positioning when sidebar is open */
+.leaflet-top.leaflet-left {
+  top: 10px !important;
+}
+
 /* Leaflet popup dark styling */
 [data-theme="dark"] .leaflet-popup-content-wrapper {
   background: var(--popup-bg);
