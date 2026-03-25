@@ -363,14 +363,16 @@ L.Control.WeatherLayers = L.Control.extend({
         var opacitySlider = panel.querySelector('#weather-opacity');
         var owmButtons = panel.querySelectorAll('.owm-btn');
         
-        // Radar toggle
+        // Radar toggle (Show button)
         if (radarToggle) {
             radarToggle.addEventListener('click', function() {
                 this.classList.toggle('active');
                 if (this.classList.contains('active')) {
+                    this.textContent = 'Hide';
                     console.log('RainViewer: Showing radar');
                     RainViewer.show();
                 } else {
+                    this.textContent = 'Show';
                     console.log('RainViewer: Hiding radar');
                     RainViewer.hide();
                 }
@@ -380,27 +382,33 @@ L.Control.WeatherLayers = L.Control.extend({
         // Radar prev
         if (radarPrev) {
             radarPrev.addEventListener('click', function() {
-                if (radarToggle && radarToggle.classList.contains('active')) {
-                    RainViewer.prev();
+                // Auto-enable radar if not already
+                if (radarToggle && !radarToggle.classList.contains('active')) {
+                    radarToggle.click();
                 }
+                RainViewer.prev();
             });
         }
         
         // Radar play/pause
         if (radarPlayBtn) {
             radarPlayBtn.addEventListener('click', function() {
-                if (radarToggle && radarToggle.classList.contains('active')) {
-                    RainViewer.toggle();
+                // Auto-enable radar if not already
+                if (radarToggle && !radarToggle.classList.contains('active')) {
+                    radarToggle.click();
                 }
+                RainViewer.toggle();
             });
         }
         
         // Radar next
         if (radarNext) {
             radarNext.addEventListener('click', function() {
-                if (radarToggle && radarToggle.classList.contains('active')) {
-                    RainViewer.next();
+                // Auto-enable radar if not already
+                if (radarToggle && !radarToggle.classList.contains('active')) {
+                    radarToggle.click();
                 }
+                RainViewer.next();
             });
         }
         
