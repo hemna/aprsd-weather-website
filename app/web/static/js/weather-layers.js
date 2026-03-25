@@ -203,6 +203,8 @@ var OpenWeatherMapLayers = {
         this.map = map;
         this.apiKey = apiKey;
         
+        console.log('OpenWeatherMap: Initializing with API key:', apiKey ? apiKey.substring(0, 8) + '...' : 'NONE');
+        
         if (!apiKey) {
             console.warn('OpenWeatherMap: No API key provided');
             return;
@@ -211,12 +213,14 @@ var OpenWeatherMapLayers = {
         // Pre-create all layers
         for (var key in this.LAYER_TYPES) {
             this.layers[key] = this.createLayer(this.LAYER_TYPES[key].layer);
+            console.log('OpenWeatherMap: Created layer', key);
         }
     },
     
     createLayer: function(layerName) {
-        return L.tileLayer(
-            'https://tile.openweathermap.org/map/' + layerName + '/{z}/{x}/{y}.png?appid=' + this.apiKey,
+        var url = 'https://tile.openweathermap.org/map/' + layerName + '/{z}/{x}/{y}.png?appid=' + this.apiKey;
+        console.log('OpenWeatherMap: Layer URL pattern:', url.replace(this.apiKey, 'API_KEY'));
+        return L.tileLayer(url,
             {
                 maxZoom: 18,
                 opacity: 0.6,
@@ -226,6 +230,8 @@ var OpenWeatherMapLayers = {
     },
     
     show: function(type) {
+        console.log('OpenWeatherMap: Showing layer', type);
+        
         // Hide current layer if different
         if (this.currentLayer && this.currentLayer !== type) {
             this.hide();
@@ -234,13 +240,16 @@ var OpenWeatherMapLayers = {
         if (this.layers[type]) {
             this.layers[type].addTo(this.map);
             this.currentLayer = type;
-            console.log('OpenWeatherMap: Showing', type);
+            console.log('OpenWeatherMap: Layer added to map:', type);
+        } else {
+            console.error('OpenWeatherMap: Layer not found:', type);
         }
     },
     
     hide: function() {
         if (this.currentLayer && this.layers[this.currentLayer]) {
             this.map.removeLayer(this.layers[this.currentLayer]);
+            console.log('OpenWeatherMap: Layer removed:', this.currentLayer);
         }
         this.currentLayer = null;
     },
@@ -321,8 +330,8 @@ L.Control.WeatherLayers = L.Control.extend({
             html += '<div class="owm-buttons">';
             html += '<button class="weather-btn owm-btn" data-layer="precipitation"><i class="fa fa-tint"></i> Rain</button>';
             html += '<button class="weather-btn owm-btn" data-layer="clouds"><i class="fa fa-cloud"></i> Clouds</button>';
-            html += '<button class="weather-btn owm-btn" data-layer="temperature"><i class="fa fa-thermometer-half"></i> Temp</button>';
-            html += '<button class="weather-btn owm-btn" data-layer="wind"><i class="fa fa-leaf"></i> Wind</button>';
+            html += '<button class="weather-btn owm-btn" data-layer="temperature"><i class="fa fa-sun-o"></i> Temp</button>';
+            html += '<button class="weather-btn owm-btn" data-layer="wind"><i class="fa fa-flag"></i> Wind</button>';
             html += '</div>';
             html += '</div>';
         }
