@@ -1,0 +1,7 @@
+data = [{'id': 12, 'callsign': 'test', 'latitude': 12},
+        {'id': 13, 'callsign': 'test2', 'longitude': 13}]
+
+
+piss = Object.values(data)
+
+print(f"PIss = {piss}")

@@ -134,9 +134,85 @@ function update_requests(data) {
 
 function update_map(data) {
     console.log("update_map " + Object.keys(data).length + " stations");
-    console.log(data);
     $.each(data, function(index, value) {
         add_marker(value);
+    });
+}
+
+// Progressive loading: fetch remaining stations in batches after initial load
+var BATCH_SIZE = 2000;
+var loadedStations = 0;
+
+function loadRemainingStations() {
+    if (typeof stationsTotal === 'undefined' || typeof stationsOffset === 'undefined') {
+        console.log('Progressive loading not available');
+        return;
+    }
+
+    // Start from where markers.js left off
+    var nextOffset = stationsOffset + (typeof stations !== 'undefined' ? stations.length : BATCH_SIZE);
+    loadedStations = nextOffset;
+
+    console.log('Loading remaining stations from offset ' + nextOffset);
+    showLoadingIndicator(loadedStations, stationsTotal);
+
+    loadStationBatch(nextOffset);
+}
+
+function loadStationBatch(offset) {
+    $.ajax({
+        url: "/stations?limit=" + BATCH_SIZE + "&offset=" + offset,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.stations && data.stations.length > 0) {
+                console.log('Loaded batch: ' + data.stations.length + ' stations (offset=' + offset + ')');
+                update_map(data.stations);
+                loadedStations += data.stations.length;
+                updateLoadingIndicator(loadedStations, data.total);
+
+                // Load next batch if more available
+                if (data.hasMore) {
+                    // Small delay to keep UI responsive
+                    setTimeout(function() {
+                        loadStationBatch(offset + BATCH_SIZE);
+                    }, 100);
+                } else {
+                    hideLoadingIndicator();
+                    console.log('All ' + data.total + ' stations loaded');
+                }
+            } else {
+                hideLoadingIndicator();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to load stations batch: ' + error);
+            hideLoadingIndicator();
+        }
+    });
+}
+
+function showLoadingIndicator(loaded, total) {
+    if ($('#loading-indicator').length === 0) {
+        var indicator = '<div id="loading-indicator" style="' +
+            'position: fixed; bottom: 20px; right: 20px; z-index: 1000; ' +
+            'background: var(--bg-tertiary, #21262d); color: var(--text-primary, #e6edf3); ' +
+            'padding: 10px 15px; border-radius: 6px; font-size: 13px; ' +
+            'border: 1px solid var(--border-color, #30363d); box-shadow: 0 2px 8px rgba(0,0,0,0.3);">' +
+            '<i class="fa fa-spinner fa-spin"></i> Loading stations: ' +
+            '<span id="loading-count">' + loaded + '</span> / ' + total +
+            '</div>';
+        $('body').append(indicator);
+    }
+}
+
+function updateLoadingIndicator(loaded, total) {
+    $('#loading-count').text(loaded);
+}
+
+function hideLoadingIndicator() {
+    $('#loading-indicator').fadeOut(500, function() {
+        $(this).remove();
     });
 }
 

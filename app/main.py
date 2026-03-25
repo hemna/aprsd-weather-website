@@ -327,10 +327,28 @@ def create_app() -> FastAPI:
         return report
 
     @app.get("/stations")
-    async def get_stations():
-        stations = _get_wx_stations()
-        LOG.info(f"get_stations {len(stations)}")
-        return json.dumps(stations)
+    async def get_stations(limit: int = 0, offset: int = 0):
+        """Return weather stations as JSON.
+
+        Supports pagination:
+        - limit: max stations to return (0 = all)
+        - offset: starting index (default 0)
+        """
+        all_stations = _get_wx_stations()
+        if not all_stations:
+            return json.dumps({"stations": [], "total": 0, "hasMore": False})
+
+        total = len(all_stations)
+
+        if limit > 0:
+            stations = all_stations[offset : offset + limit]
+            has_more = (offset + limit) < total
+        else:
+            stations = all_stations
+            has_more = False
+
+        LOG.info(f"get_stations: returning {len(stations)} of {total}")
+        return json.dumps({"stations": stations, "total": total, "hasMore": has_more})
 
     @app.get("/stats", response_class=JSONResponse)
     async def stats():
@@ -343,19 +361,44 @@ def create_app() -> FastAPI:
         return fetch_requests()
 
     @app.get("/markers.js")
-    async def markers_js(response: Response):
-        stations = _get_wx_stations()
-        LOG.warning(f"info? {_get_wx_stations.cache_info()}")
-        LOG.warning(f"stations {len(stations)}")
-        response.headers["Content-Type"] = "application/javascript"
-        stations_str = "stations = {};"
-        if stations:
-            stations_str = (
-                f"stations = {json.dumps(stations)};\n"
-                "$(document).ready(function() {console.log('call update_map');update_map(stations);});"
+    async def markers_js(response: Response, limit: int = 1000, offset: int = 0):
+        """Return weather station markers as JavaScript.
+
+        Supports pagination for progressive loading:
+        - limit: max stations to return (default 1000)
+        - offset: starting index (default 0)
+
+        Returns JavaScript that sets 'stations' array and calls update_map().
+        Also includes metadata: total count and whether more data is available.
+        """
+        all_stations = _get_wx_stations()
+        LOG.debug(f"markers.js cache: {_get_wx_stations.cache_info()}")
+
+        if not all_stations:
+            return Response(
+                "var stations = []; var stationsTotal = 0; var stationsHasMore = false;",
+                media_type="application/javascript",
             )
 
-        # return stations_str
+        total = len(all_stations)
+        # Apply pagination
+        stations = all_stations[offset : offset + limit]
+        has_more = (offset + limit) < total
+
+        LOG.info(f"markers.js: returning {len(stations)} of {total} (offset={offset}, limit={limit})")
+
+        stations_str = (
+            f"var stations = {json.dumps(stations)};\n"
+            f"var stationsTotal = {total};\n"
+            f"var stationsHasMore = {'true' if has_more else 'false'};\n"
+            f"var stationsOffset = {offset};\n"
+            "$(document).ready(function() {\n"
+            "  console.log('Initial load: ' + stations.length + ' of ' + stationsTotal + ' stations');\n"
+            "  update_map(stations);\n"
+            "  if (stationsHasMore) { loadRemainingStations(); }\n"
+            "});"
+        )
+
         return Response(stations_str, media_type="application/javascript")
 
     return app
