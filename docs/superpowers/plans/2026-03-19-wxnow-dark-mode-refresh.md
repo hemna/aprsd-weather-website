@@ -24,7 +24,7 @@
 | `app/web/templates/index.html` | Add theme CSS link, toggle button, dark map tile layer |
 | `app/web/templates/about.html` | Add theme CSS link, toggle button, unify styling |
 | `app/web/static/css/index.css` | Refactor to use CSS variables |
-| `app/web/static/css/leaflet-sidebar.min.css` | Override sidebar colors for dark mode |
+| `app/web/static/css/sidebar-dark.css` | Override sidebar colors for dark mode |
 
 ---
 

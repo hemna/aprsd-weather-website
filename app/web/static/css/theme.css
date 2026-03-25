@@ -77,19 +77,21 @@ a:hover {
   background: var(--bg-elevated);
 }
 
-.theme-toggle .icon-sun,
-.theme-toggle .icon-moon {
+.theme-toggle .theme-toggle-light,
+.theme-toggle .theme-toggle-dark {
   width: 18px;
   height: 18px;
 }
 
 /* Hide icons based on theme */
-[data-theme="dark"] .theme-toggle .icon-moon {
+/* In dark mode, show sun (to switch to light), hide moon */
+[data-theme="dark"] .theme-toggle .theme-toggle-dark {
   display: none;
 }
 
-[data-theme="light"] .theme-toggle .icon-sun,
-:root:not([data-theme]) .theme-toggle .icon-sun {
+/* In light mode, show moon (to switch to dark), hide sun */
+[data-theme="light"] .theme-toggle .theme-toggle-light,
+:root:not([data-theme]) .theme-toggle .theme-toggle-light {
   display: none;
 }
 

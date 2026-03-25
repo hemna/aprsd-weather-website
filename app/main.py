@@ -1,10 +1,10 @@
 # Note: We don't import aprsd.conf.common to avoid requiring APRSD's full config
 # This website only needs the web config options and reads stats from JSON files
+import copy
 import datetime
 import json
 import logging as python_logging
 import os
-import sys
 
 import click
 import log
@@ -59,7 +59,81 @@ web_opts = [
 LOG = None
 CONF.register_opts(web_opts, group="web")
 API_KEY_HEADER = "X-Api-Key"
-app = FastAPI(static_url_path="/static", static_folder="web/static", template_folder="web/templates")
+app = None  # Initialized in create_app()
+
+# Default stats structure for aprsd 5.0+
+DEFAULT_STATS = {
+    "APRSDStats": {
+        "version": "unknown",
+        "uptime": "unknown",
+        "callsign": "WXNOW",
+    },
+    "APRSClientStats": {
+        "server_string": "unknown",
+        "connected": False,
+    },
+    "SeenList": {},
+}
+
+
+def _get_save_location() -> str:
+    """Get the save location from config, with fallback to default."""
+    try:
+        return CONF.save_location
+    except cfg.NoSuchOptError:
+        return "/config/"
+
+
+def _load_stats_from_file(json_file: str) -> dict:
+    """Load stats from JSON file, returning default stats on failure."""
+    if not os.path.exists(json_file):
+        LOG.warning(f"Stats file not found: {json_file}")
+        return copy.deepcopy(DEFAULT_STATS)
+
+    try:
+        with open(json_file) as fp:
+            data = json.load(fp)
+            LOG.debug(f"Loaded stats from {json_file}")
+            return data
+    except json.JSONDecodeError as ex:
+        LOG.error(f"Failed to decode JSON from {json_file}: {ex}")
+    except Exception as ex:
+        LOG.error(f"Failed to load stats from {json_file}: {ex}")
+
+    return copy.deepcopy(DEFAULT_STATS)
+
+
+def _parse_seen_timestamp(raw) -> int | None:
+    """Parse a timestamp string or datetime to epoch seconds."""
+    if not raw:
+        return None
+    if isinstance(raw, datetime.datetime):
+        return int(raw.timestamp())
+    if not isinstance(raw, str):
+        return None
+
+    # Try both timestamp formats
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return int(datetime.datetime.strptime(raw, fmt).timestamp())
+        except ValueError:
+            continue
+    return None
+
+
+def _normalize_seen_list(stats_data: dict) -> None:
+    """Add epoch timestamps to SeenList entries."""
+    seen_list = stats_data.get("SeenList", {})
+    if not isinstance(seen_list, dict):
+        return
+
+    for call, entry in seen_list.items():
+        try:
+            ts = _parse_seen_timestamp(entry.get("last"))
+            if ts is not None:
+                entry["ts"] = ts
+        except Exception as ex:
+            LOG.debug(f"Could not parse timestamp for {call}: {ex}")
 
 
 def fetch_stats():
@@ -71,60 +145,9 @@ def fetch_stats():
     now = datetime.datetime.now()
     time_format = "%m-%d-%Y %H:%M:%S"
 
-    # Default empty stats structure for aprsd 5.0+
-    default_stats = {
-        "APRSDStats": {
-            "version": "unknown",
-            "uptime": "unknown",
-            "callsign": "WXNOW",
-        },
-        "APRSClientStats": {
-            "server_string": "unknown",
-            "connected": False,
-        },
-        "SeenList": {},
-    }
-
-    stats_data = default_stats.copy()
-
-    # Try to load from JSON file (aprsd 5.0+ format)
-    # The save_location comes from aprsd's config, defaulting to /config/
-    try:
-        save_location = CONF.save_location
-    except cfg.NoSuchOptError:
-        save_location = "/config/"
-
-    json_file = os.path.join(save_location, "statsstore.json")
-
-    try:
-        if os.path.exists(json_file):
-            with open(json_file) as fp:
-                stats_data = json.load(fp)
-                LOG.debug(f"Loaded stats from {json_file}")
-        else:
-            LOG.warning(f"Stats file not found: {json_file}")
-    except json.JSONDecodeError as ex:
-        LOG.error(f"Failed to decode JSON from {json_file}: {ex}")
-    except Exception as ex:
-        LOG.error(f"Failed to load stats from {json_file}: {ex}")
-
-    # Process SeenList if present
-    seen_list = stats_data.get("SeenList", {})
-    if isinstance(seen_list, dict):
-        for call in seen_list:
-            try:
-                # Handle the 'last' field which may be a string or datetime
-                last_val = seen_list[call].get("last")
-                if last_val and isinstance(last_val, str):
-                    # Try parsing with microseconds first
-                    try:
-                        date = datetime.datetime.strptime(last_val, "%Y-%m-%d %H:%M:%S.%f")
-                    except ValueError:
-                        # Try without microseconds
-                        date = datetime.datetime.strptime(last_val, "%Y-%m-%d %H:%M:%S")
-                    seen_list[call]["ts"] = int(datetime.datetime.timestamp(date))
-            except Exception as ex:
-                LOG.debug(f"Could not parse timestamp for {call}: {ex}")
+    json_file = os.path.join(_get_save_location(), "statsstore.json")
+    stats_data = _load_stats_from_file(json_file)
+    _normalize_seen_list(stats_data)
 
     stats = {
         "time": now.strftime(time_format),
@@ -309,9 +332,11 @@ def create_app() -> FastAPI:
         LOG.info(f"get_stations {len(stations)}")
         return json.dumps(stations)
 
-    @app.get("/stats")
+    @app.get("/stats", response_class=JSONResponse)
     async def stats():
-        return json.dumps(fetch_stats(), cls=SimpleJSONEncoder)
+        stats_data = fetch_stats()
+        # Use JSONResponse with custom encoder for datetime serialization
+        return JSONResponse(content=json.loads(json.dumps(stats_data, cls=SimpleJSONEncoder)))
 
     @app.get("/requests")
     async def get_requests():
@@ -359,10 +384,13 @@ def create_app() -> FastAPI:
 )
 @click.version_option()
 def main(config_file, log_level):
+    """CLI entry point for local development."""
     global app, LOG
 
-    if config_file != utils.DEFAULT_CONFIG_FILE:
-        config_file = sys.argv[1:]
+    # Note: create_app() uses hardcoded config for gunicorn/production
+    # For CLI development, we could extend create_app to accept parameters
+    # but for now we just call create_app() with defaults
+    app = create_app()
+    import uvicorn
 
-    app = create_app(config_file=config_file, log_level=log_level, gunicorn=False)
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
