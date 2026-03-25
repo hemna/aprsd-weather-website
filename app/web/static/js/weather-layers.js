@@ -105,7 +105,10 @@ var RainViewer = {
     
     show: function() {
         if (this.frames.length > 0) {
+            console.log('RainViewer: Showing latest frame (not animating)');
             this.showFrame(this.currentFrame);
+        } else {
+            console.warn('RainViewer: No frames loaded yet');
         }
     },
     
@@ -115,12 +118,19 @@ var RainViewer = {
             this.map.removeLayer(this.radarLayer);
             this.radarLayer = null;
         }
+        console.log('RainViewer: Hidden');
     },
     
     play: function() {
         if (this.isPlaying) return;
+        if (!this.frames.length) {
+            console.warn('RainViewer: No frames to animate');
+            return;
+        }
         this.isPlaying = true;
-        $('#radar-play-btn').html('<i class="fa fa-pause"></i>');
+        var playBtn = document.getElementById('radar-play-btn');
+        if (playBtn) playBtn.innerHTML = '<i class="fa fa-pause"></i>';
+        console.log('RainViewer: Starting animation');
         this.animate();
     },
     
@@ -130,7 +140,9 @@ var RainViewer = {
             clearTimeout(this.animationTimer);
             this.animationTimer = null;
         }
-        $('#radar-play-btn').html('<i class="fa fa-play"></i>');
+        var playBtn = document.getElementById('radar-play-btn');
+        if (playBtn) playBtn.innerHTML = '<i class="fa fa-play"></i>';
+        console.log('RainViewer: Stopped animation');
     },
     
     toggle: function() {
@@ -147,9 +159,10 @@ var RainViewer = {
         
         this.showFrame(this.currentFrame + 1);
         
+        // Slower animation to avoid rate limiting - 1 second between frames
         this.animationTimer = setTimeout(function() {
             self.animate();
-        }, 500);
+        }, 1000);
     },
     
     prev: function() {
