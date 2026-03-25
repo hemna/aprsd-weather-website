@@ -226,7 +226,8 @@ var OpenWeatherMapLayers = {
         return L.tileLayer(url,
             {
                 maxZoom: 18,
-                opacity: 0.6,
+                opacity: 0.8,
+                zIndex: 500,
                 attribution: '<a href="https://openweathermap.org/" target="_blank">OpenWeatherMap</a>'
             }
         );
