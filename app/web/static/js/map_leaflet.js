@@ -217,6 +217,11 @@ function add_marker(station_data) {
                 type: 'GET',
                 dataType: 'json',
                 success: function(data){
+                    if (!data || data.temperature === undefined) {
+                        popup.setContent("<div style='padding:10px;'><b>" + station_data['properties']['callsign'] + "</b><br><br>No weather data available for this station.</div>");
+                        popup.update();
+                        return;
+                    }
                     var content = get_station_popup_html(station_data, data);
                     popup.setContent(content);
                     popup.update();
@@ -225,8 +230,9 @@ function add_marker(station_data) {
                         loadTemperatureChart(station_data['properties']['id'], data['time']);
                     }, 100);
                 },
-                fail: function(data) {
-                    alert('FAIL: ' + data);
+                error: function(xhr, status, error) {
+                    popup.setContent("<div style='padding:10px;'><b>" + station_data['properties']['callsign'] + "</b><br><br>Failed to load weather data.</div>");
+                    popup.update();
                 }
             });
     };
@@ -262,6 +268,11 @@ function createWxStationMarker(stationData, requesterCallsign) {
             type: 'GET',
             dataType: 'json',
             success: function(data) {
+                if (!data || data.temperature === undefined) {
+                    popup.setContent("<div style='padding:10px;'><b>" + stationData.properties.callsign + "</b><br><br>No weather data available.<br><br><span class='popup-station-list'>Returned for request from <b>" + requesterCallsign + "</b></span></div>");
+                    popup.update();
+                    return;
+                }
                 var content = get_station_popup_html(stationData, data);
                 // Add note about which request this was for
                 content = content.replace('</div></div></div>', '</div></div><p class="popup-station-list" style="margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px;">Returned for request from <b>' + requesterCallsign + '</b></p></div>');
@@ -273,7 +284,7 @@ function createWxStationMarker(stationData, requesterCallsign) {
                 }, 100);
             },
             error: function() {
-                popup.setContent("Failed to load weather data");
+                popup.setContent("<div style='padding:10px;'><b>" + stationData.properties.callsign + "</b><br><br>Failed to load weather data.</div>");
                 popup.update();
             }
         });
