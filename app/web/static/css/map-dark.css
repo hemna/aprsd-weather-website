@@ -1,9 +1,30 @@
 /* app/web/static/css/map-dark.css */
 /* Dark mode styles for map popups and controls */
 
-/* Fix zoom control positioning when sidebar is open */
-.leaflet-top.leaflet-left {
-  top: 10px !important;
+/* Fix zoom control positioning - reduce gap between sidebar and controls */
+.leaflet-sidebar-left ~ .leaflet-control-container .leaflet-left {
+  left: 420px !important;
+  transition: left 0.5s;
+}
+
+.leaflet-sidebar-left.collapsed ~ .leaflet-control-container .leaflet-left {
+  left: 50px !important;
+}
+
+@media (max-width: 991px) {
+  .leaflet-sidebar-left ~ .leaflet-control-container .leaflet-left {
+    left: 320px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .leaflet-sidebar-left ~ .leaflet-control-container .leaflet-left {
+    left: 50px !important;
+  }
+  
+  .leaflet-sidebar-left:not(.collapsed) ~ .leaflet-control-container .leaflet-left {
+    display: none;
+  }
 }
 
 /* Leaflet popup dark styling */
