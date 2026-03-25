@@ -419,10 +419,13 @@ L.Control.WeatherLayers = L.Control.extend({
         }
         
         // OpenWeatherMap buttons
+        console.log('Weather control: Found', owmButtons.length, 'OWM buttons');
         owmButtons.forEach(function(btn) {
+            console.log('Weather control: Binding click to button', btn.getAttribute('data-layer'));
             btn.addEventListener('click', function() {
                 var layer = this.getAttribute('data-layer');
                 var wasActive = this.classList.contains('active');
+                console.log('OWM Button clicked:', layer, 'wasActive:', wasActive);
                 
                 // Turn off radar when showing OWM layer
                 if (radarToggle && radarToggle.classList.contains('active')) {
