@@ -1,16 +1,17 @@
+import colorsys
 from pathlib import Path
 
 home = str(Path.home())
-DEFAULT_CONFIG_DIR = "{}/.config/aprsd_repeat/".format(home)
-DEFAULT_CONFIG_FILE = "{}/.config/aprsd_repeat/aprsd_repeat.conf".format(home)
+DEFAULT_CONFIG_DIR = f"{home}/.config/aprsd_repeat/"
+DEFAULT_CONFIG_FILE = f"{home}/.config/aprsd_repeat/aprsd_repeat.conf"
 
 
 def hsl_to_rgb(hsl):
     """Convert hsl colorspace values to RGB."""
     # Convert hsl to 0-1 ranges.
-    h = hsl[0] / 359.
-    s = hsl[1] / 100.
-    lumen = hsl[2] / 100.
+    h = hsl[0] / 359.0
+    s = hsl[1] / 100.0
+    lumen = hsl[2] / 100.0
     hsl = (h, s, lumen)
     # returns numbers between 0 and 1
     tmp = colorsys.hls_to_rgb(h, s, lumen)
@@ -33,7 +34,7 @@ def pick_color(percent, clip, saturation, start, end):
     start = start hue value.  (0 = red, 120 = green)
     end = end hue value.  (0 = red, 120 = green)
     """
-    a = 0 if (percent <= clip) else (((percent - clip) / (100 - clip)))
+    a = 0 if (percent <= clip) else ((percent - clip) / (100 - clip))
     b = abs(end - start) * a
     c = (start + b) if (end > start) else (start - b)
 

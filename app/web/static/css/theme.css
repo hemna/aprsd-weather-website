@@ -1,0 +1,146 @@
+/* app/web/static/css/theme.css */
+/* WXNOW Dark Mode Theme - Midnight Style */
+
+:root {
+  /* Light theme (fallback) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #ffffff;
+  --bg-elevated: #ffffff;
+  --border-color: #d0d7de;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-muted: #8c959f;
+  --accent-blue: #0969da;
+  --accent-green: #1a7f37;
+  --accent-red: #cf222e;
+  --accent-yellow: #9a6700;
+  --link-color: #0969da;
+  --sidebar-bg: #f6f8fa;
+  --card-bg: #ffffff;
+  --popup-bg: #ffffff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+[data-theme="dark"] {
+  /* Dark theme - Midnight/GitHub style */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-elevated: #30363d;
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --accent-blue: #58a6ff;
+  --accent-green: #238636;
+  --accent-red: #f85149;
+  --accent-yellow: #d29922;
+  --link-color: #58a6ff;
+  --sidebar-bg: #161b22;
+  --card-bg: #21262d;
+  --popup-bg: #21262d;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Base styles using variables */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+a {
+  color: var(--link-color);
+}
+
+a:hover {
+  color: var(--accent-blue);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-elevated);
+}
+
+.theme-toggle .theme-toggle-light,
+.theme-toggle .theme-toggle-dark {
+  width: 18px;
+  height: 18px;
+}
+
+/* Hide icons based on theme */
+/* In dark mode, show sun (to switch to light), hide moon */
+[data-theme="dark"] .theme-toggle .theme-toggle-dark {
+  display: none;
+}
+
+/* In light mode, show moon (to switch to dark), hide sun */
+[data-theme="light"] .theme-toggle .theme-toggle-light,
+:root:not([data-theme]) .theme-toggle .theme-toggle-light {
+  display: none;
+}
+
+/* Cards and elevated surfaces */
+.card, .panel, .ui.segment {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Status badges */
+.badge-connected {
+  background: var(--accent-green);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.badge-server {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Scrollbar styling for dark mode */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color);
+}
+
+/* Mobile responsive base */
+@media (max-width: 768px) {
+  .theme-toggle {
+    padding: 8px 12px;
+  }
+}

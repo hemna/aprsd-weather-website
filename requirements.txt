@@ -1,4 +1,4 @@
-aprsd>=3.0.0
+aprsd @ git+https://github.com/craigerl/aprsd.git@master
 geojson
 requests
 rich

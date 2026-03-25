@@ -1,0 +1,279 @@
+/* app/web/static/css/about-dark.css */
+/* Dark mode styling for the about page (Semantic UI based) */
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+/* Body background and text */
+[data-theme="dark"] body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Override Semantic UI segment backgrounds */
+[data-theme="dark"] .ui.segment,
+[data-theme="dark"] .ui.tab.segment {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ui.attached.segment {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+
+[data-theme="dark"] #header {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+[data-theme="dark"] .ui.header,
+[data-theme="dark"] h1.ui.header,
+[data-theme="dark"] h2.ui.header,
+[data-theme="dark"] h3.ui.header,
+[data-theme="dark"] h4.ui.header {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ui.dividing.header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .ui.header a {
+  color: var(--accent-primary);
+}
+
+[data-theme="dark"] .ui.header a:hover {
+  color: var(--accent-hover);
+}
+
+/* ============================================
+   TAB MENU STYLES
+   ============================================ */
+
+[data-theme="dark"] .ui.tabular.menu {
+  background-color: var(--bg-primary);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .ui.tabular.menu .item {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .ui.tabular.menu .item:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ui.tabular.menu .active.item {
+  background-color: var(--bg-secondary);
+  border-bottom-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   LIST STYLES
+   ============================================ */
+
+[data-theme="dark"] .ui.list .item {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ui.list .item::before {
+  color: var(--text-muted);
+}
+
+/* ============================================
+   LINK STYLES
+   ============================================ */
+
+[data-theme="dark"] a {
+  color: var(--accent-primary);
+}
+
+[data-theme="dark"] a:hover {
+  color: var(--accent-hover);
+}
+
+/* ============================================
+   TEXT CONTAINER
+   ============================================ */
+
+[data-theme="dark"] .ui.text.container {
+  color: var(--text-primary);
+}
+
+/* Colored inline text overrides */
+[data-theme="dark"] span[style*="color: green"] {
+  color: var(--success-color) !important;
+}
+
+[data-theme="dark"] span[style*="color: blue"] {
+  color: var(--accent-primary) !important;
+}
+
+/* ============================================
+   BADGES SECTION
+   ============================================ */
+
+[data-theme="dark"] #badges {
+  background-color: var(--bg-primary);
+  padding: 1rem 0;
+}
+
+/* ============================================
+   GRID STYLES
+   ============================================ */
+
+[data-theme="dark"] .ui.grid {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ui.grid .column {
+  color: var(--text-primary);
+}
+
+/* ============================================
+   SEEN LIST SECTION
+   ============================================ */
+
+[data-theme="dark"] #seenDiv {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] #seenDiv table,
+[data-theme="dark"] .ui.table {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .ui.table thead th {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .ui.table tbody tr {
+  background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .ui.table tbody tr:nth-child(even) {
+  background-color: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .ui.table td {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   CONTACT TAB SECTION
+   ============================================ */
+
+[data-theme="dark"] [data-tab="contact-tab"] {
+  background-color: var(--bg-secondary);
+}
+
+/* ============================================
+   YOUTUBE IFRAME
+   ============================================ */
+
+[data-theme="dark"] iframe {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+/* ============================================
+   FLOATED IMAGES
+   ============================================ */
+
+[data-theme="dark"] .ui.small.left.floated.image {
+  /* Keep images as-is, just add subtle border in dark mode */
+  border-radius: 4px;
+}
+
+/* ============================================
+   CODE/PRE BLOCKS (for prism.js overrides)
+   ============================================ */
+
+[data-theme="dark"] code,
+[data-theme="dark"] pre {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+/* ============================================
+   SCROLLBARS
+   ============================================ */
+
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ============================================
+   LIGHT MODE (restore Semantic UI defaults)
+   ============================================ */
+
+[data-theme="light"] body {
+  background-color: #fff;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+[data-theme="light"] .ui.segment,
+[data-theme="light"] .ui.tab.segment {
+  background-color: #fff;
+  border-color: rgba(34, 36, 38, 0.15);
+  color: rgba(0, 0, 0, 0.87);
+}
+
+[data-theme="light"] .ui.header,
+[data-theme="light"] h1.ui.header,
+[data-theme="light"] h2.ui.header,
+[data-theme="light"] h3.ui.header,
+[data-theme="light"] h4.ui.header {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+[data-theme="light"] .ui.tabular.menu .item {
+  background-color: transparent;
+  border-color: rgba(34, 36, 38, 0.15);
+  color: rgba(0, 0, 0, 0.87);
+}
+
+[data-theme="light"] .ui.tabular.menu .active.item {
+  background-color: #fff;
+  color: rgba(0, 0, 0, 0.95);
+}
+
+[data-theme="light"] a {
+  color: #4183c4;
+}
+
+[data-theme="light"] a:hover {
+  color: #1e70bf;
+}

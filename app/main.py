@@ -1,85 +1,154 @@
-import aprsd.conf.common
-import click
+# Note: We don't import aprsd.conf.common to avoid requiring APRSD's full config
+# This website only needs the web config options and reads stats from JSON files
+import copy
 import datetime
 import json
 import logging as python_logging
+import os
+
+import click
+import log
 import requests
-import sys
-
+import utils
 from aprslib import parse as aprs_parse
-from cachetools import cached, TTLCache
-from geojson import Feature, Point
-from oslo_config import cfg
-from aprsd.threads import stats as stats_threads
-from aprsd.utils import json as aprsd_json
-
+from cachetools import TTLCache, cached
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from geojson import Feature, Point
+from oslo_config import cfg
 
-import log
-import utils
+
+class SimpleJSONEncoder(json.JSONEncoder):
+    """Simple JSON encoder for datetime objects."""
+
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        elif isinstance(obj, (datetime.date, datetime.time, datetime.timedelta)):
+            return str(obj)
+        return super().default(obj)
+
 
 CONF = cfg.CONF
-grp = cfg.OptGroup('web')
+
+# Register default options (normally from aprsd.conf.common)
+default_opts = [
+    cfg.StrOpt("save_location", default="/config/", help="The location where APRSD stores its data files"),
+]
+CONF.register_opts(default_opts)
+
+grp = cfg.OptGroup("web")
 cfg.CONF.register_group(grp)
 web_opts = [
-    cfg.StrOpt('host_ip',
-               default='0.0.0.0',
-               help='The hostname/ip address to listen on'
-               ),
-    cfg.IntOpt('host_port',
-               default=80,
-               help='The port to listen on for requests'
-               ),
-    cfg.StrOpt('api_key',
-               default='abcdefg',
-               help='The mapbox api_key.'
-               ),
-    cfg.StrOpt('mapbox_token',
-               default='',
-               help='The mapbox token.'
-               ),
-    cfg.StrOpt('haminfo_ip',
-               default='0.0.0.0',
-               help='The hostname/ip address to haminfo api'
-               ),
-    cfg.StrOpt('haminfo_port',
-               default='8043',
-               help='The haminfo api IP port'
-               ),
-    cfg.StrOpt('aprsd_repeat_ip',
-               default='0.0.0.0',
-               help='The hostname/ip address to aprsd instance',
-               ),
-    cfg.StrOpt('aprsd_repeat_port',
-               default='8043',
-               help='The APRSD api IP port'
-               ),
+    cfg.StrOpt("host_ip", default="0.0.0.0", help="The hostname/ip address to listen on"),
+    cfg.IntOpt("host_port", default=80, help="The port to listen on for requests"),
+    cfg.StrOpt("api_key", default="abcdefg", help="The mapbox api_key."),
+    cfg.StrOpt("mapbox_token", default="", help="The mapbox token."),
+    cfg.StrOpt("haminfo_ip", default="0.0.0.0", help="The hostname/ip address to haminfo api"),
+    cfg.StrOpt("haminfo_port", default="8043", help="The haminfo api IP port"),
+    cfg.StrOpt(
+        "aprsd_repeat_ip",
+        default="0.0.0.0",
+        help="The hostname/ip address to aprsd instance",
+    ),
+    cfg.StrOpt("aprsd_repeat_port", default="8043", help="The APRSD api IP port"),
 ]
 
 LOG = None
 CONF.register_opts(web_opts, group="web")
 API_KEY_HEADER = "X-Api-Key"
-app = FastAPI(
-    static_url_path="/static",
-    static_folder="web/static",
-    template_folder="web/templates"
-)
+app = None  # Initialized in create_app()
+
+# Default stats structure for aprsd 5.0+
+DEFAULT_STATS = {
+    "APRSDStats": {
+        "version": "unknown",
+        "uptime": "unknown",
+        "callsign": "WXNOW",
+    },
+    "APRSClientStats": {
+        "server_string": "unknown",
+        "connected": False,
+    },
+    "SeenList": {},
+}
+
+
+def _get_save_location() -> str:
+    """Get the save location from config, with fallback to default."""
+    try:
+        return CONF.save_location
+    except cfg.NoSuchOptError:
+        return "/config/"
+
+
+def _load_stats_from_file(json_file: str) -> dict:
+    """Load stats from JSON file, returning default stats on failure."""
+    if not os.path.exists(json_file):
+        LOG.warning(f"Stats file not found: {json_file}")
+        return copy.deepcopy(DEFAULT_STATS)
+
+    try:
+        with open(json_file) as fp:
+            data = json.load(fp)
+            LOG.debug(f"Loaded stats from {json_file}")
+            return data
+    except json.JSONDecodeError as ex:
+        LOG.error(f"Failed to decode JSON from {json_file}: {ex}")
+    except Exception as ex:
+        LOG.error(f"Failed to load stats from {json_file}: {ex}")
+
+    return copy.deepcopy(DEFAULT_STATS)
+
+
+def _parse_seen_timestamp(raw) -> int | None:
+    """Parse a timestamp string or datetime to epoch seconds."""
+    if not raw:
+        return None
+    if isinstance(raw, datetime.datetime):
+        return int(raw.timestamp())
+    if not isinstance(raw, str):
+        return None
+
+    # Try both timestamp formats
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return int(datetime.datetime.strptime(raw, fmt).timestamp())
+        except ValueError:
+            continue
+    return None
+
+
+def _normalize_seen_list(stats_data: dict) -> None:
+    """Add epoch timestamps to SeenList entries."""
+    seen_list = stats_data.get("SeenList", {})
+    if not isinstance(seen_list, dict):
+        return
+
+    for call, entry in seen_list.items():
+        try:
+            ts = _parse_seen_timestamp(entry.get("last"))
+            if ts is not None:
+                entry["ts"] = ts
+        except Exception as ex:
+            LOG.debug(f"Could not parse timestamp for {call}: {ex}")
 
 
 def fetch_stats():
-    stats_obj = stats_threads.StatsStore()
-    stats_obj.load()
+    """Fetch stats from the statsstore.json file.
+
+    APRSD 5.0+ saves stats to JSON format. This function loads the stats
+    and provides safe defaults if data is missing or corrupted.
+    """
     now = datetime.datetime.now()
     time_format = "%m-%d-%Y %H:%M:%S"
-    stats_data = stats_obj.data
-    seen_list = stats_data.get("SeenList", [])
-    for call in seen_list:
-        # add a ts 2021-11-01 16:18:11.631723
-        date = datetime.datetime.strptime(str(seen_list[call]['last']), "%Y-%m-%d %H:%M:%S.%f")
-        seen_list[call]["ts"] = int(datetime.datetime.timestamp(date))
+
+    json_file = os.path.join(_get_save_location(), "statsstore.json")
+    stats_data = _load_stats_from_file(json_file)
+    _normalize_seen_list(stats_data)
+
     stats = {
         "time": now.strftime(time_format),
         "stats": stats_data,
@@ -97,19 +166,14 @@ def _get_wx_stations():
     try:
         headers = {API_KEY_HEADER: CONF.web.api_key}
         LOG.debug(f"headers {headers}")
-        response = requests.get(url=url,
-                                headers=headers,
-                                timeout=60)
+        response = requests.get(url=url, headers=headers, timeout=60)
         if response.status_code == 200:
             json_record = response.json()
 
             for entry in json_record:
-                #LOG.info(entry)
-                point = Point((entry['longitude'], entry['latitude']))
-                marker = Feature(geometry=point,
-                                 id=entry['id'],
-                                 properties=entry
-                                 )
+                # LOG.info(entry)
+                point = Point((entry["longitude"], entry["latitude"]))
+                marker = Feature(geometry=point, id=entry["id"], properties=entry)
                 stations.append(marker)
                 # self.cs.print(entry)
         else:
@@ -129,30 +193,23 @@ def fetch_wx_report(wx_station_id, request):
         LOG.warning("No station id provided")
         return None
 
-    url = (
-        f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/"
-        f"wxstation_report?wx_station_id={wx_station_id}"
-    )
+    url = f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/wxstation_report?wx_station_id={wx_station_id}"
     LOG.debug(f"Fetching {url}")
 
     try:
         headers = {API_KEY_HEADER: CONF.web.api_key}
         LOG.debug(f"headers {headers}")
-        response = requests.get(
-            url=url,
-            headers=headers,
-            timeout=60)
+        response = requests.get(url=url, headers=headers, timeout=60)
 
         if response.status_code == 200:
-            raw = response.text
             json_record = response.json()
             try:
-                decoded = aprs_parse(json_record.get('raw_report'))
-                json_record['decoded'] = decoded
+                decoded = aprs_parse(json_record.get("raw_report"))
+                json_record["decoded"] = decoded
                 LOG.info(f"DECODED {decoded}")
             except Exception as ex:
                 LOG.error(f"Failed DECODED {ex}")
-                json_record['decoded'] = {'path': 'unknown'}
+                json_record["decoded"] = {"path": "unknown"}
                 pass
 
             return json_record
@@ -172,19 +229,15 @@ def fetch_requests():
             "number": 50,
         }
         headers = {API_KEY_HEADER: CONF.web.api_key}
-        response = requests.post(url=url, json=params, headers=headers,
-                                 timeout=2)
+        response = requests.post(url=url, json=params, headers=headers, timeout=2)
         if response.status_code == 200:
             json_record = response.json()
             for entry in json_record:
-                entry['station_callsigns'] = entry['station_callsigns'].replace(',', ', ')
+                entry["station_callsigns"] = entry["station_callsigns"].replace(",", ", ")
 
                 # Now convert each entry into a geojson feature
-                point = Point((entry['latitude'], entry['longitude']))
-                marker = Feature(geometry=point,
-                                 id=entry['id'],
-                                 properties=entry
-                                 )
+                point = Point((entry["latitude"], entry["longitude"]))
+                marker = Feature(geometry=point, id=entry["id"], properties=entry)
                 markers.append(marker)
     except Exception as ex:
         LOG.error(ex)
@@ -192,17 +245,14 @@ def fetch_requests():
     return json.dumps(markers)
 
 
-
-def create_app () -> FastAPI:
+def create_app() -> FastAPI:
     global app, LOG
 
-    #conf_file = utils.DEFAULT_CONFIG_FILE
-    conf_file = "config/aprsd_weather.conf"
+    # conf_file = utils.DEFAULT_CONFIG_FILE
+    conf_file = "/config/aprsd_weather.conf"
     config_file = ["--config-file", conf_file]
 
-    log_level = "DEBUG"
-
-    CONF(config_file, project='aprsd_repeat', version="1.0.0")
+    CONF(config_file, project="aprsd_repeat", version="1.0.0")
     python_logging.captureWarnings(True)
     app = FastAPI()
     LOG = log.setup_logging(app, gunicorn=True)
@@ -215,49 +265,59 @@ def create_app () -> FastAPI:
     async def index(request: Request):
         aprsd_stats = fetch_stats()
         LOG.debug(aprsd_stats)
-        aprs_connection = (
-            "APRS-IS Server: <a href='http://status.aprs2.net' >"
-            "{}</a>".format(aprsd_stats["stats"]["APRSClientStats"]["server_string"])
-        )
 
-        version = aprsd_stats["stats"]["APRSDStats"]["version"]
-        aprsd_version = aprsd_stats["stats"]["APRSDStats"]["version"]
-        uptime = aprsd_stats["stats"]["APRSDStats"].get("uptime")
+        # Safely access stats with defaults for aprsd 5.0+ structure
+        stats_data = aprsd_stats.get("stats", {})
+        aprs_client_stats = stats_data.get("APRSClientStats", {})
+        aprsd_stats_data = stats_data.get("APRSDStats", {})
+
+        server_string = aprs_client_stats.get("server_string", "unknown")
+        aprs_connection = f"APRS-IS Server: <a href='http://status.aprs2.net' >{server_string}</a>"
+
+        version = aprsd_stats_data.get("version", "unknown")
+        aprsd_version = aprsd_stats_data.get("version", "unknown")
+        uptime = aprsd_stats_data.get("uptime", "unknown")
         return templates.TemplateResponse(
-            request=request, name="index.html",
+            request=request,
+            name="index.html",
             context={
-                "initial_stats": json.dumps(aprsd_stats, cls=aprsd_json.SimpleJSONEncoder),
+                "initial_stats": json.dumps(aprsd_stats, cls=SimpleJSONEncoder),
                 "aprs_connection": aprs_connection,
                 "callsign": "WXNOW",
                 "version": version,
                 "uptime": uptime,
                 "aprsd_version": aprsd_version,
-                "mapbox_token": CONF.web.mapbox_token
-            }
+                "mapbox_token": CONF.web.mapbox_token,
+            },
         )
 
     @app.get("/about", response_class=HTMLResponse)
     async def about(request: Request):
         aprsd_stats = fetch_stats()
-        aprs_connection = (
-            "APRS-IS Server: <a href='http://status.aprs2.net' >"
-            "{}</a>".format(aprsd_stats["aprs-is"]["server"])
-        )
 
-        version = aprsd_stats["repeat"]["version"]
-        aprsd_version = aprsd_stats["aprsd"]["version"]
-        uptime = aprsd_stats["aprsd"].get("uptime")
+        # Safely access stats with defaults for aprsd 5.0+ structure
+        stats_data = aprsd_stats.get("stats", {})
+        aprs_client_stats = stats_data.get("APRSClientStats", {})
+        aprsd_stats_data = stats_data.get("APRSDStats", {})
+
+        server_string = aprs_client_stats.get("server_string", "unknown")
+        aprs_connection = f"APRS-IS Server: <a href='http://status.aprs2.net' >{server_string}</a>"
+
+        version = aprsd_stats_data.get("version", "unknown")
+        aprsd_version = aprsd_stats_data.get("version", "unknown")
+        uptime = aprsd_stats_data.get("uptime", "unknown")
         return templates.TemplateResponse(
-            request=request, name="about.html",
+            request=request,
+            name="about.html",
             context={
-                "initial_stats": json.dumps(aprsd_stats, cls=aprsd_json.SimpleJSONEncoder),
+                "initial_stats": json.dumps(aprsd_stats, cls=SimpleJSONEncoder),
                 "aprs_connection": aprs_connection,
                 "callsign": "WXNOW",
                 "version": version,
                 "uptime": uptime,
                 "aprsd_version": aprsd_version,
-                "mapbox_token": CONF.web.mapbox_token
-            }
+                "mapbox_token": CONF.web.mapbox_token,
+            },
         )
 
     @app.get("/wx_report/{station_id}", response_class=JSONResponse)
@@ -272,9 +332,11 @@ def create_app () -> FastAPI:
         LOG.info(f"get_stations {len(stations)}")
         return json.dumps(stations)
 
-    @app.get("/stats")
+    @app.get("/stats", response_class=JSONResponse)
     async def stats():
-        json.dumps(fetch_stats(), cls=aprsd_json.SimpleJSONEncoder)
+        stats_data = fetch_stats()
+        # Use JSONResponse with custom encoder for datetime serialization
+        return JSONResponse(content=json.loads(json.dumps(stats_data, cls=SimpleJSONEncoder)))
 
     @app.get("/requests")
     async def get_requests():
@@ -293,7 +355,7 @@ def create_app () -> FastAPI:
                 "$(document).ready(function() {console.log('call update_map');update_map(stations);});"
             )
 
-        #return stations_str
+        # return stations_str
         return Response(stations_str, media_type="application/javascript")
 
     return app
@@ -322,12 +384,13 @@ def create_app () -> FastAPI:
 )
 @click.version_option()
 def main(config_file, log_level):
+    """CLI entry point for local development."""
     global app, LOG
 
-    conf_file = config_file
-    if config_file != utils.DEFAULT_CONFIG_FILE:
-        config_file = sys.argv[1:]
+    # Note: create_app() uses hardcoded config for gunicorn/production
+    # For CLI development, we could extend create_app to accept parameters
+    # but for now we just call create_app() with defaults
+    app = create_app()
+    import uvicorn
 
-    app = create_app(config_file=config_file, log_level=log_level,
-                     gunicorn=False)
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
