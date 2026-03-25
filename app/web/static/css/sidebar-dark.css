@@ -1,6 +1,15 @@
 /* app/web/static/css/sidebar-dark.css */
 /* Dark mode overrides for Leaflet sidebar */
 
+/* Hide sidebar tabs column - we only have one tab */
+.leaflet-sidebar-tabs {
+  display: none !important;
+}
+
+.leaflet-sidebar-left .leaflet-sidebar-content {
+  left: 0 !important;
+}
+
 /* Sidebar container */
 [data-theme="dark"] .leaflet-sidebar {
   background: var(--sidebar-bg);
