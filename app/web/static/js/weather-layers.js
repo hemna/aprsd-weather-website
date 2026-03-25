@@ -328,10 +328,10 @@ L.Control.WeatherLayers = L.Control.extend({
             html += '<div class="weather-section">';
             html += '<div class="weather-section-title"><i class="fa fa-map"></i> Weather Maps</div>';
             html += '<div class="owm-buttons">';
-            html += '<button class="weather-btn owm-btn" data-layer="precipitation"><i class="fa fa-tint"></i> Rain</button>';
-            html += '<button class="weather-btn owm-btn" data-layer="clouds"><i class="fa fa-cloud"></i> Clouds</button>';
-            html += '<button class="weather-btn owm-btn" data-layer="temperature"><i class="fa fa-sun-o"></i> Temp</button>';
-            html += '<button class="weather-btn owm-btn" data-layer="wind"><i class="fa fa-flag"></i> Wind</button>';
+            html += '<button class="weather-btn owm-btn" data-layer="precipitation">Rain</button>';
+            html += '<button class="weather-btn owm-btn" data-layer="clouds">Clouds</button>';
+            html += '<button class="weather-btn owm-btn" data-layer="temperature">Temp</button>';
+            html += '<button class="weather-btn owm-btn" data-layer="wind">Wind</button>';
             html += '</div>';
             html += '</div>';
         }
