@@ -84,24 +84,218 @@
   color: var(--link-color);
 }
 
-/* Rainviewer control */
-[data-theme="dark"] .leaflet-control-rainviewer {
+/* Weather Layers Control */
+.leaflet-control-weather {
+  background: var(--card-bg, #fff);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.leaflet-control-weather-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  color: var(--text-primary, #333);
+  text-decoration: none;
+}
+
+.leaflet-control-weather-button:hover {
+  background: var(--bg-elevated, #f5f5f5);
+}
+
+.leaflet-control-weather-button.active {
+  background: var(--accent-blue, #0969da);
+  color: #fff;
+}
+
+.leaflet-control-weather-panel {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 220px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0;
+  z-index: 1000;
+}
+
+.weather-panel-header {
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-color, #ddd);
+  color: var(--text-primary, #333);
+}
+
+.weather-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #ddd);
+}
+
+.weather-section:last-child {
+  border-bottom: none;
+}
+
+.weather-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted, #666);
+  margin-bottom: 8px;
+}
+
+.weather-section-title i {
+  margin-right: 4px;
+}
+
+.radar-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.radar-time {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  margin-left: auto;
+  background: var(--bg-tertiary, #f0f0f0);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.weather-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  background: var(--bg-tertiary, #f5f5f5);
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.weather-btn:hover {
+  background: var(--bg-elevated, #e8e8e8);
+}
+
+.weather-btn.active {
+  background: var(--accent-blue, #0969da);
+  color: #fff;
+  border-color: var(--accent-blue, #0969da);
+}
+
+.weather-btn i {
+  font-size: 11px;
+}
+
+.owm-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.owm-btn {
+  flex: 1 1 45%;
+  min-width: 80px;
+}
+
+.owm-btn i {
+  margin-right: 4px;
+}
+
+.weather-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-tertiary, #ddd);
+  border-radius: 2px;
+  outline: none;
+}
+
+.weather-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-blue, #0969da);
+  cursor: pointer;
+}
+
+.weather-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-blue, #0969da);
+  cursor: pointer;
+  border: none;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] .leaflet-control-weather {
   background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .leaflet-control-weather-button {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .leaflet-control-weather-button:hover {
+  background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .leaflet-control-weather-panel {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .weather-panel-header {
   border-color: var(--border-color);
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .leaflet-control-rainviewer button {
+[data-theme="dark"] .weather-section {
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .weather-section-title {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .radar-time {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .weather-btn {
   background: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .leaflet-control-rainviewer button:hover {
+[data-theme="dark"] .weather-btn:hover {
   background: var(--bg-elevated);
 }
 
-[data-theme="dark"] .leaflet-control-rainviewer-slider {
+[data-theme="dark"] .weather-btn.active {
+  background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+}
+
+[data-theme="dark"] .weather-slider {
   background: var(--bg-tertiary);
 }
 

@@ -59,9 +59,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css" integrity="sha512-fYyZwU1wU0QWB4Yutd/Pvhy5J1oWAwFXun1pt+Bps04WSe4Aq6tyHlT4+MHSJhD8JlLfgLuC4CbCnX5KHSjyCg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js" integrity="sha512-TiMWaqipFi2Vqt4ugRzsF8oRoGFlFFuqIi30FFxEPNw58Ov9mOy6LgC05ysfkxwLE0xVeZtmr92wVg9siAFRWA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mwasil/Leaflet.Rainviewer/leaflet.rainviewer.css"/>
-    <script src="https://cdn.jsdelivr.net/gh/mwasil/Leaflet.Rainviewer/leaflet.rainviewer.js"></script>
-
     <!-- Chart.js for temperature graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -88,6 +85,7 @@
         }
     </style>
     <script src="/static/js/map_leaflet.js"></script>
+    <script src="/static/js/weather-layers.js"></script>
     <script src="/static/js/theme-toggle.js"></script>
     <script defer src="/markers.js"></script>
     <script type="text/javascript">
@@ -259,16 +257,10 @@
         var sidebar = L.control.sidebar({ container: 'sidebar' })
             .addTo(map).open('home');
 
-        // Add rainview overlay
-        L.control.rainviewer({
+        // Add weather layers control
+        L.control.weatherLayers({
             position: 'topright',
-            nextButtonText: '>',
-            playStopButtonText: 'Play/Stop',
-            prevButtonText: '<',
-            positionSliderLabelText: "Hour:",
-            opacitySliderLabelText: "Opacity:",
-            animationInterval: 500,
-            opacity: 0.5
+            openWeatherApiKey: '{{ openweathermap_api_key }}'
         }).addTo(map);
 
     </script>

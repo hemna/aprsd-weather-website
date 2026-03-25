@@ -46,6 +46,7 @@ web_opts = [
     cfg.IntOpt("host_port", default=80, help="The port to listen on for requests"),
     cfg.StrOpt("api_key", default="abcdefg", help="The mapbox api_key."),
     cfg.StrOpt("mapbox_token", default="", help="The mapbox token."),
+    cfg.StrOpt("openweathermap_api_key", default="", help="OpenWeatherMap API key for weather layers."),
     cfg.StrOpt("haminfo_ip", default="0.0.0.0", help="The hostname/ip address to haminfo api"),
     cfg.StrOpt("haminfo_port", default="8043", help="The haminfo api IP port"),
     cfg.StrOpt(
@@ -288,6 +289,7 @@ def create_app() -> FastAPI:
                 "uptime": uptime,
                 "aprsd_version": aprsd_version,
                 "mapbox_token": CONF.web.mapbox_token,
+                "openweathermap_api_key": CONF.web.openweathermap_api_key,
             },
         )
 
