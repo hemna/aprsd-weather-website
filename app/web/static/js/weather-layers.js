@@ -372,6 +372,9 @@ L.Control.WeatherLayers = L.Control.extend({
                 this.classList.toggle('active');
                 if (this.classList.contains('active')) {
                     this.textContent = 'Hide';
+                    // Turn off OpenWeatherMap layers when showing radar
+                    owmButtons.forEach(function(b) { b.classList.remove('active'); });
+                    OpenWeatherMapLayers.hide();
                     console.log('RainViewer: Showing radar');
                     RainViewer.show();
                 } else {
@@ -420,6 +423,13 @@ L.Control.WeatherLayers = L.Control.extend({
             btn.addEventListener('click', function() {
                 var layer = this.getAttribute('data-layer');
                 var wasActive = this.classList.contains('active');
+                
+                // Turn off radar when showing OWM layer
+                if (radarToggle && radarToggle.classList.contains('active')) {
+                    radarToggle.textContent = 'Show';
+                    radarToggle.classList.remove('active');
+                    RainViewer.hide();
+                }
                 
                 // Deactivate all OWM buttons
                 owmButtons.forEach(function(b) { b.classList.remove('active'); });
