@@ -57,9 +57,13 @@ function get_station_popup_html(station_data, report_data) {
     return popup_html;
 }
 
+// Store markers by station ID for lookup
+var stationMarkersById = {};
+
 function add_marker(station_data) {
     var longitude = station_data['properties']['longitude']
     var latitude = station_data['properties']['latitude']
+    var station_id = station_data['properties']['id']
 
     var wxIcon = L.icon({
         iconUrl: '/static/images/wx_icon.png',
@@ -69,8 +73,13 @@ function add_marker(station_data) {
         shadowAnchor: [4, 62],  // the same for the shadow
         popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
     })
-    marker = L.marker([latitude, longitude], {icon: wxIcon});
+    var marker = L.marker([latitude, longitude], {icon: wxIcon});
     marker.bindPopup("Loading...");
+    
+    // Store reference by station ID
+    marker.stationId = station_id;
+    marker.stationData = station_data;
+    stationMarkersById[station_id] = marker;
 
     function onMapClick(e) {
             var popup = e.target.getPopup();
@@ -94,8 +103,9 @@ function add_marker(station_data) {
     markers.addLayer(marker);
 }
 
-// Track the current request marker so we can remove it on next click
+// Track the current request marker and highlighted WX stations so we can remove them on next click
 var currentRequestMarker = null;
+var currentWxMarkers = [];
 
 function add_request(data) {
     // console.log(data);
@@ -106,6 +116,7 @@ function add_request(data) {
     var count = data["properties"]["count"];
     var created = data["properties"]["created"];
     var station_callsigns = data["properties"]["station_callsigns"];
+    var wx_station_ids = data["properties"]["wx_station_ids"] || "";
     
     // Popup shows the requesting station info
     var popup_html = "<b class='popup-callsign'>" + callsign + "</b>";
@@ -124,6 +135,12 @@ function add_request(data) {
         map.removeLayer(currentRequestMarker);
       }
       
+      // Remove previous WX station markers
+      currentWxMarkers.forEach(function(m) {
+        map.removeLayer(m);
+      });
+      currentWxMarkers = [];
+      
       var coords = [latitude, longitude];
       var redMarker = L.ExtraMarkers.icon({
         icon: 'fa-broadcast-tower',
@@ -132,12 +149,51 @@ function add_request(data) {
         prefix: 'fa'
       });
       
-      // Create marker, add to map, and open popup
+      // Create marker for requesting station
       currentRequestMarker = L.marker(coords, {icon: redMarker})
         .bindPopup(popup_html)
         .addTo(map);
       
-      map.setView(coords, 11);
+      // Add markers for the returned weather stations
+      if (wx_station_ids) {
+        var ids = wx_station_ids.split(',');
+        var bounds = L.latLngBounds([coords]);
+        
+        ids.forEach(function(id) {
+          var stationMarker = stationMarkersById[parseInt(id.trim())];
+          if (stationMarker && stationMarker.stationData) {
+            var stationData = stationMarker.stationData;
+            var wxCoords = [stationData.properties.latitude, stationData.properties.longitude];
+            
+            // Create a highlighted marker for the WX station
+            var greenMarker = L.ExtraMarkers.icon({
+              icon: 'fa-cloud',
+              markerColor: 'green',
+              shape: 'circle',
+              prefix: 'fa'
+            });
+            
+            var wxPopup = "<b class='popup-callsign'>" + stationData.properties.callsign + "</b>";
+            wxPopup += "<p>Weather station returned for " + callsign + "</p>";
+            
+            var wxMarker = L.marker(wxCoords, {icon: greenMarker})
+              .bindPopup(wxPopup)
+              .addTo(map);
+            
+            currentWxMarkers.push(wxMarker);
+            bounds.extend(wxCoords);
+          }
+        });
+        
+        // Fit map to show both the requester and weather stations
+        if (currentWxMarkers.length > 0) {
+          map.fitBounds(bounds, {padding: [50, 50], maxZoom: 12});
+        } else {
+          map.setView(coords, 11);
+        }
+      } else {
+        map.setView(coords, 11);
+      }
       
       // Open the popup after a short delay to ensure map has moved
       setTimeout(function() {
