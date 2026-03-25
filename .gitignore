@@ -1,0 +1,34 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local config
+.env
+*.local
+
+# Logs
+logs/
+*.log
+
+# Superpowers
+.superpowers/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime
+*.pid

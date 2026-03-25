@@ -96,12 +96,6 @@
     </script>
 </head>
 <body>
-    <!-- Theme toggle button -->
-    <button class="theme-toggle" aria-label="Switch to light mode" title="Toggle dark/light mode">
-        <i class="fa fa-sun-o theme-toggle-light"></i>
-        <i class="fa fa-moon-o theme-toggle-dark"></i>
-    </button>
-
     <!-- optionally define the sidebar content via HTML markup -->
     <div id="sidebar" class="leaflet-sidebar collapsed">
 
@@ -125,6 +119,14 @@
                     WXNOW APRS Nearest Weather service
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
+                <!-- Theme toggle in sidebar -->
+                <div class="sidebar-theme-toggle">
+                    <button class="theme-toggle" aria-label="Switch to light mode" title="Toggle dark/light mode">
+                        <i class="fa fa-sun-o theme-toggle-light"></i>
+                        <i class="fa fa-moon-o theme-toggle-dark"></i>
+                        <span class="theme-toggle-label">Theme</span>
+                    </button>
+                </div>
                 <div id="badges" style="margin-top: 25px;">
                     <a href="https://www.twitter.com/wb4bor"><img style="width:20px;height:20px;" src="/static/images/twitter_logo_64.png"/>@WB4BOR</a>
                     <br>

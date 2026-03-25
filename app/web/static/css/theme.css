@@ -63,13 +63,13 @@ a:hover {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   cursor: pointer;
   color: var(--text-primary);
-  font-size: 16px;
-  display: flex;
+  font-size: 14px;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: background-color 0.2s ease;
 }
 
@@ -79,8 +79,19 @@ a:hover {
 
 .theme-toggle .theme-toggle-light,
 .theme-toggle .theme-toggle-dark {
-  width: 18px;
-  height: 18px;
+  font-size: 16px;
+}
+
+.theme-toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Sidebar theme toggle container */
+.sidebar-theme-toggle {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
 }
 
 /* Hide icons based on theme */

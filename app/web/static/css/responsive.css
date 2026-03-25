@@ -54,10 +54,9 @@ html, body {
     margin: 5px;
   }
   
-  /* Theme toggle in header needs adjustment */
-  .theme-toggle {
-    padding: 4px 8px;
-    font-size: 14px;
+  /* Theme toggle in sidebar on mobile */
+  .sidebar-theme-toggle {
+    padding: 8px 10px;
   }
 }
 
@@ -72,23 +71,19 @@ html, body {
   }
 }
 
-/* Theme toggle positioning */
-.theme-toggle-container {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-}
-
+/* Sidebar theme toggle adjustments */
 @media (max-width: 768px) {
-  .theme-toggle-container {
-    top: 5px;
-    right: 5px;
+  .sidebar-theme-toggle {
+    padding: 8px 10px;
   }
   
   .theme-toggle {
-    padding: 8px;
-    font-size: 14px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .theme-toggle-label {
+    font-size: 12px;
   }
 }
 
