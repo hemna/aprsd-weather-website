@@ -118,13 +118,32 @@ function createWxStationMarker(stationData, requesterCallsign) {
       prefix: 'fa'
     });
     
-    var wxPopup = "<b class='popup-callsign'>" + stationData.properties.callsign + "</b>";
-    wxPopup += "<p>Weather station returned for " + requesterCallsign + "</p>";
+    var wxMarker = L.marker(wxCoords, {icon: greenMarker});
+    wxMarker.bindPopup("Loading...");
     
-    var wxMarker = L.marker(wxCoords, {icon: greenMarker})
-      .bindPopup(wxPopup)
-      .addTo(map);
+    // Fetch weather report on click (same as regular station markers)
+    wxMarker.on('click', function(e) {
+        var popup = e.target.getPopup();
+        
+        $.ajax({
+            url: "/wx_report/" + stationData.properties.id,
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                var content = get_station_popup_html(stationData, data);
+                // Add note about which request this was for
+                content += "<p class='popup-station-list' style='margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px;'>Returned for request from <b>" + requesterCallsign + "</b></p>";
+                popup.setContent(content);
+                popup.update();
+            },
+            error: function() {
+                popup.setContent("Failed to load weather data");
+                popup.update();
+            }
+        });
+    });
     
+    wxMarker.addTo(map);
     return wxMarker;
 }
 
