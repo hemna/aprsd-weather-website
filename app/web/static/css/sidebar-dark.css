@@ -8,6 +8,7 @@
 
 .leaflet-sidebar-left .leaflet-sidebar-content {
   left: 0 !important;
+  padding-left: 2px;
 }
 
 /* Sidebar container */
