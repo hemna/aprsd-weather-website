@@ -28,6 +28,14 @@
   font-size: 1.1rem;
 }
 
+/* Sidebar close button - ensure visibility */
+.leaflet-sidebar-close {
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
 [data-theme="dark"] .leaflet-sidebar-close {
   color: var(--text-secondary);
 }
