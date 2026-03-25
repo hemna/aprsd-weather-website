@@ -57,11 +57,14 @@ var RainViewer = {
                   '/{z}/{x}/{y}/' + this.COLOR_SCHEME + '/' + 
                   this.SMOOTH + '_' + this.SNOW + '.png';
         
+        console.log('RainViewer: Creating layer with URL:', url.replace('{z}/{x}/{y}', 'Z/X/Y'));
+        
         return L.tileLayer(url, {
             tileSize: 256,
             opacity: this.opacity,
             maxNativeZoom: 7,
             maxZoom: 18,
+            zIndex: 1000,
             attribution: '<a href="https://www.rainviewer.com/" target="_blank">RainViewer</a>'
         });
     },
