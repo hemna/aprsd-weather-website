@@ -23,11 +23,13 @@ var RainViewer = {
     
     init: function(map) {
         this.map = map;
+        console.log('RainViewer: Initializing...');
         this.loadData();
     },
     
     loadData: function() {
         var self = this;
+        console.log('RainViewer: Fetching API data...');
         $.ajax({
             url: this.API_URL,
             type: 'GET',
@@ -36,8 +38,10 @@ var RainViewer = {
                 self.apiData = data;
                 self.frames = data.radar.past || [];
                 console.log('RainViewer: Loaded ' + self.frames.length + ' radar frames');
+                console.log('RainViewer: Host =', data.host);
                 if (self.frames.length > 0) {
                     self.currentFrame = self.frames.length - 1; // Start with latest
+                    console.log('RainViewer: Latest frame =', self.frames[self.currentFrame].path);
                 }
             },
             error: function(xhr, status, error) {
@@ -63,7 +67,10 @@ var RainViewer = {
     },
     
     showFrame: function(index) {
-        if (!this.frames.length) return;
+        if (!this.frames.length) {
+            console.warn('RainViewer: No frames available');
+            return;
+        }
         
         // Wrap index
         while (index >= this.frames.length) index -= this.frames.length;
@@ -71,6 +78,8 @@ var RainViewer = {
         
         this.currentFrame = index;
         var frame = this.frames[index];
+        
+        console.log('RainViewer: Showing frame', index, frame.path);
         
         // Remove existing layer
         if (this.radarLayer) {
@@ -81,6 +90,7 @@ var RainViewer = {
         this.radarLayer = this.createLayer(frame);
         if (this.radarLayer) {
             this.radarLayer.addTo(this.map);
+            console.log('RainViewer: Layer added to map');
         }
         
         // Update timestamp display
@@ -321,57 +331,85 @@ L.Control.WeatherLayers = L.Control.extend({
     
     _bindEvents: function() {
         var self = this;
+        var panel = this._panel;
         
-        // Radar controls
-        $('#radar-toggle').on('click', function() {
-            $(this).toggleClass('active');
-            if ($(this).hasClass('active')) {
-                RainViewer.show();
-            } else {
-                RainViewer.hide();
-            }
-        });
+        // Use native DOM queries within our panel to avoid jQuery selector issues
+        var radarToggle = panel.querySelector('#radar-toggle');
+        var radarPrev = panel.querySelector('#radar-prev');
+        var radarPlayBtn = panel.querySelector('#radar-play-btn');
+        var radarNext = panel.querySelector('#radar-next');
+        var opacitySlider = panel.querySelector('#weather-opacity');
+        var owmButtons = panel.querySelectorAll('.owm-btn');
         
-        $('#radar-prev').on('click', function() {
-            if ($('#radar-toggle').hasClass('active')) {
-                RainViewer.prev();
-            }
-        });
+        // Radar toggle
+        if (radarToggle) {
+            radarToggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+                if (this.classList.contains('active')) {
+                    console.log('RainViewer: Showing radar');
+                    RainViewer.show();
+                } else {
+                    console.log('RainViewer: Hiding radar');
+                    RainViewer.hide();
+                }
+            });
+        }
         
-        $('#radar-play-btn').on('click', function() {
-            if ($('#radar-toggle').hasClass('active')) {
-                RainViewer.toggle();
-            }
-        });
+        // Radar prev
+        if (radarPrev) {
+            radarPrev.addEventListener('click', function() {
+                if (radarToggle && radarToggle.classList.contains('active')) {
+                    RainViewer.prev();
+                }
+            });
+        }
         
-        $('#radar-next').on('click', function() {
-            if ($('#radar-toggle').hasClass('active')) {
-                RainViewer.next();
-            }
-        });
+        // Radar play/pause
+        if (radarPlayBtn) {
+            radarPlayBtn.addEventListener('click', function() {
+                if (radarToggle && radarToggle.classList.contains('active')) {
+                    RainViewer.toggle();
+                }
+            });
+        }
+        
+        // Radar next
+        if (radarNext) {
+            radarNext.addEventListener('click', function() {
+                if (radarToggle && radarToggle.classList.contains('active')) {
+                    RainViewer.next();
+                }
+            });
+        }
         
         // OpenWeatherMap buttons
-        $('.owm-btn').on('click', function() {
-            var layer = $(this).data('layer');
-            var wasActive = $(this).hasClass('active');
-            
-            // Deactivate all OWM buttons
-            $('.owm-btn').removeClass('active');
-            
-            if (wasActive) {
-                OpenWeatherMapLayers.hide();
-            } else {
-                $(this).addClass('active');
-                OpenWeatherMapLayers.show(layer);
-            }
+        owmButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var layer = this.getAttribute('data-layer');
+                var wasActive = this.classList.contains('active');
+                
+                // Deactivate all OWM buttons
+                owmButtons.forEach(function(b) { b.classList.remove('active'); });
+                
+                if (wasActive) {
+                    OpenWeatherMapLayers.hide();
+                } else {
+                    this.classList.add('active');
+                    OpenWeatherMapLayers.show(layer);
+                }
+            });
         });
         
         // Opacity slider
-        $('#weather-opacity').on('input', function() {
-            var value = parseFloat($(this).val());
-            RainViewer.setOpacity(value);
-            OpenWeatherMapLayers.setOpacity(value);
-        });
+        if (opacitySlider) {
+            opacitySlider.addEventListener('input', function() {
+                var value = parseFloat(this.value);
+                RainViewer.setOpacity(value);
+                OpenWeatherMapLayers.setOpacity(value);
+            });
+        }
+        
+        console.log('Weather layers control: events bound');
     },
     
     _togglePanel: function(e) {
