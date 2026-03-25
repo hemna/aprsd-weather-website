@@ -107,6 +107,95 @@ function add_marker(station_data) {
 var currentRequestMarker = null;
 var currentWxMarkers = [];
 
+// Helper function to create a WX station marker
+function createWxStationMarker(stationData, requesterCallsign) {
+    var wxCoords = [stationData.properties.latitude, stationData.properties.longitude];
+    
+    var greenMarker = L.ExtraMarkers.icon({
+      icon: 'fa-cloud',
+      markerColor: 'green',
+      shape: 'circle',
+      prefix: 'fa'
+    });
+    
+    var wxPopup = "<b class='popup-callsign'>" + stationData.properties.callsign + "</b>";
+    wxPopup += "<p>Weather station returned for " + requesterCallsign + "</p>";
+    
+    var wxMarker = L.marker(wxCoords, {icon: greenMarker})
+      .bindPopup(wxPopup)
+      .addTo(map);
+    
+    return wxMarker;
+}
+
+// Function to show WX stations for a request - fetches from server if not in cache
+function showWxStations(wx_station_ids, callsign, coords, bounds) {
+    if (!wx_station_ids) {
+        map.setView(coords, 11);
+        return;
+    }
+    
+    var ids = wx_station_ids.split(',').map(function(id) { return parseInt(id.trim()); });
+    var missingIds = [];
+    var foundStations = [];
+    
+    // Check which stations we already have
+    ids.forEach(function(id) {
+        var stationMarker = stationMarkersById[id];
+        if (stationMarker && stationMarker.stationData) {
+            foundStations.push(stationMarker.stationData);
+        } else {
+            missingIds.push(id);
+        }
+    });
+    
+    // If we have all stations, show them immediately
+    if (missingIds.length === 0) {
+        foundStations.forEach(function(stationData) {
+            var wxMarker = createWxStationMarker(stationData, callsign);
+            currentWxMarkers.push(wxMarker);
+            bounds.extend([stationData.properties.latitude, stationData.properties.longitude]);
+        });
+        
+        if (currentWxMarkers.length > 0) {
+            map.fitBounds(bounds, {padding: [50, 50], maxZoom: 12});
+        } else {
+            map.setView(coords, 11);
+        }
+        return;
+    }
+    
+    // Fetch missing stations from server
+    console.log("Fetching missing station IDs:", missingIds);
+    $.ajax({
+        url: "/stations_by_ids?ids=" + ids.join(','),
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            var stations = typeof data === 'string' ? JSON.parse(data) : data;
+            
+            stations.forEach(function(stationData) {
+                // Add to cache for future use
+                stationMarkersById[stationData.id] = {stationData: stationData};
+                
+                var wxMarker = createWxStationMarker(stationData, callsign);
+                currentWxMarkers.push(wxMarker);
+                bounds.extend([stationData.properties.latitude, stationData.properties.longitude]);
+            });
+            
+            if (currentWxMarkers.length > 0) {
+                map.fitBounds(bounds, {padding: [50, 50], maxZoom: 12});
+            } else {
+                map.setView(coords, 11);
+            }
+        },
+        error: function() {
+            console.error("Failed to fetch station data");
+            map.setView(coords, 11);
+        }
+    });
+}
+
 function add_request(data) {
     // console.log(data);
     var longitude = data['properties']['longitude']
@@ -154,46 +243,9 @@ function add_request(data) {
         .bindPopup(popup_html)
         .addTo(map);
       
-      // Add markers for the returned weather stations
-      if (wx_station_ids) {
-        var ids = wx_station_ids.split(',');
-        var bounds = L.latLngBounds([coords]);
-        
-        ids.forEach(function(id) {
-          var stationMarker = stationMarkersById[parseInt(id.trim())];
-          if (stationMarker && stationMarker.stationData) {
-            var stationData = stationMarker.stationData;
-            var wxCoords = [stationData.properties.latitude, stationData.properties.longitude];
-            
-            // Create a highlighted marker for the WX station
-            var greenMarker = L.ExtraMarkers.icon({
-              icon: 'fa-cloud',
-              markerColor: 'green',
-              shape: 'circle',
-              prefix: 'fa'
-            });
-            
-            var wxPopup = "<b class='popup-callsign'>" + stationData.properties.callsign + "</b>";
-            wxPopup += "<p>Weather station returned for " + callsign + "</p>";
-            
-            var wxMarker = L.marker(wxCoords, {icon: greenMarker})
-              .bindPopup(wxPopup)
-              .addTo(map);
-            
-            currentWxMarkers.push(wxMarker);
-            bounds.extend(wxCoords);
-          }
-        });
-        
-        // Fit map to show both the requester and weather stations
-        if (currentWxMarkers.length > 0) {
-          map.fitBounds(bounds, {padding: [50, 50], maxZoom: 12});
-        } else {
-          map.setView(coords, 11);
-        }
-      } else {
-        map.setView(coords, 11);
-      }
+      // Show WX stations (fetches from server if needed)
+      var bounds = L.latLngBounds([coords]);
+      showWxStations(wx_station_ids, callsign, coords, bounds);
       
       // Open the popup after a short delay to ensure map has moved
       setTimeout(function() {

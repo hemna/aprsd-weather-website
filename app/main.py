@@ -360,6 +360,28 @@ def create_app() -> FastAPI:
     async def get_requests():
         return fetch_requests()
 
+    @app.get("/stations_by_ids")
+    async def get_stations_by_ids(ids: str):
+        """Return specific weather stations by their IDs.
+
+        :param ids: Comma-separated list of station IDs (e.g., "21285,36117")
+        :returns: JSON array of station features matching the IDs
+        """
+        all_stations = _get_wx_stations()
+        if not all_stations:
+            return json.dumps([])
+
+        # Parse the requested IDs
+        try:
+            requested_ids = [int(id.strip()) for id in ids.split(",") if id.strip()]
+        except ValueError:
+            return json.dumps([])
+
+        # Filter stations by ID
+        matching = [s for s in all_stations if s.get("id") in requested_ids]
+        LOG.info(f"stations_by_ids: requested {requested_ids}, found {len(matching)}")
+        return json.dumps(matching)
+
     @app.get("/markers.js")
     async def markers_js(response: Response, limit: int = 1000, offset: int = 0):
         """Return weather station markers as JavaScript.
