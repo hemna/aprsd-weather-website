@@ -34,27 +34,155 @@ function fToC(fahrenheit) {
 
 
 function get_station_popup_html(station_data, report_data) {
-    marker_id = station_data['id'];
-    lat_str = convertToDms(station_data["properties"]["latitude"], false)
-    lon_str = convertToDms(station_data["properties"]["longitude"], true)
-    temperature = Math.ceil(cToF(report_data["temperature"])*100)/100
-    popup_html = "<div><a class='ui large text' href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
+    var station_id = station_data['properties']['id'];
+    var lat_str = convertToDms(station_data["properties"]["latitude"], false);
+    var lon_str = convertToDms(station_data["properties"]["longitude"], true);
+    var temperature = Math.ceil(cToF(report_data["temperature"])*100)/100;
+    var chart_id = 'temp-chart-' + station_id;
+    
+    var popup_html = "<div style='min-width:300px;'><a class='ui large text' href='http://aprs.fi/#!mt=roadmap&z=11&call="+station_data["properties"]["callsign"]+"' target='_new'>";
     popup_html += station_data["properties"]["callsign"] + "</a>";
-    popup_html += "<div style='clear:left;background-color:#0000ff;opacity:0.6;height: 2px';></div>"
-    popup_html += "<div class-'ui tiny text'>"+lat_str + " " + lon_str + "\n<br>";
-    popup_html += "Report Time: " + report_data["time"] + "\n";
+    popup_html += "<div style='clear:left;background-color:#0000ff;opacity:0.6;height: 2px';></div>";
+    popup_html += "<div class='ui tiny text'>"+lat_str + " " + lon_str + "<br>";
+    popup_html += "Report Time: " + report_data["time"] + "<br>";
     popup_html += "<div style='width:300px;word-wrap: break-word'><small>[<b class='popup-path-label'>Path</b>]&nbsp;" + report_data['decoded']['path']+ "</small></div><br>";
-    popup_html += "Comment: " + station_data["properties"]["comment"]+ "\n<br>";
-    popup_html += "Temperature: <b>" + temperature + "°F </b>\n<br>";
-    popup_html += "Pressure: <b>" + report_data["pressure"] + "hPa</b>&nbsp;&nbsp;\n";
-    popup_html += "Humidity: <b>" + report_data["humidity"] + "</b>\n<br>";
-    popup_html += "Wind Direction: <b>" + report_data["wind_direction"] + "</b>&nbsp;&nbsp;";
-    popup_html += "Wind Speed: <b>" + report_data["wind_gust"] + "</b><br>";
-    popup_html += "Rain last hour: <b>" + report_data["rain_1h"] + "</b>&nbsp;&nbsp;\n<br>";
-    popup_html += "last 24 hours: <b>" + report_data["rain_24h"] + "</b>&nbsp;&nbsp;\n<br>";
-    popup_html += "since midnight: <b>" + report_data["rain_since_midnight"] + "</b>\n";
+    popup_html += "Comment: " + station_data["properties"]["comment"]+ "<br>";
+    popup_html += "Temperature: <b>" + temperature + "°F </b><br>";
+    popup_html += "Pressure: <b>" + report_data["pressure"] + "hPa</b>&nbsp;&nbsp;";
+    popup_html += "Humidity: <b>" + report_data["humidity"] + "%</b><br>";
+    popup_html += "Wind Direction: <b>" + report_data["wind_direction"] + "°</b>&nbsp;&nbsp;";
+    popup_html += "Wind Speed: <b>" + report_data["wind_gust"] + " mph</b><br>";
+    popup_html += "Rain last hour: <b>" + report_data["rain_1h"] + "</b>&nbsp;&nbsp;";
+    popup_html += "24h: <b>" + report_data["rain_24h"] + "</b>&nbsp;&nbsp;";
+    popup_html += "midnight: <b>" + report_data["rain_since_midnight"] + "</b>";
     popup_html += "</div>";
+    
+    // Add temperature chart container
+    popup_html += "<div style='margin-top:10px;border-top:1px solid var(--border-color, #ccc);padding-top:10px;'>";
+    popup_html += "<div style='font-size:11px;font-weight:bold;margin-bottom:5px;'>24h Temperature</div>";
+    popup_html += "<div id='" + chart_id + "-container' style='width:280px;height:120px;'>";
+    popup_html += "<canvas id='" + chart_id + "' width='280' height='120'></canvas>";
+    popup_html += "</div></div>";
+    popup_html += "</div>";
+    
     return popup_html;
+}
+
+// Track active chart instances to destroy on popup close
+var activeCharts = {};
+
+function loadTemperatureChart(stationId, reportTime) {
+    var chart_id = 'temp-chart-' + stationId;
+    var canvas = document.getElementById(chart_id);
+    
+    if (!canvas) {
+        console.log('Chart canvas not found:', chart_id);
+        return;
+    }
+    
+    // Parse the report time to get the date range for history
+    var reportDate = new Date(reportTime);
+    var startDate = new Date(reportDate);
+    startDate.setHours(0, 0, 0, 0);
+    var endDate = new Date(reportDate);
+    endDate.setHours(23, 59, 59, 999);
+    
+    var start = startDate.toISOString().split('.')[0];
+    var end = endDate.toISOString().split('.')[0];
+    
+    $.ajax({
+        url: '/wx_history/' + stationId + '?start=' + start + '&end=' + end + '&fields=temperature',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.error || !data.history || data.history.length === 0) {
+                $('#' + chart_id + '-container').html('<div style="font-size:10px;color:var(--text-muted, #888);">No history data available</div>');
+                return;
+            }
+            
+            // Destroy existing chart if any
+            if (activeCharts[chart_id]) {
+                activeCharts[chart_id].destroy();
+            }
+            
+            var labels = data.history.map(function(h) {
+                var d = new Date(h.time);
+                return d.getHours() + ':00';
+            });
+            
+            var temps = data.history.map(function(h) {
+                return Math.round(cToF(h.temperature) * 10) / 10;
+            });
+            
+            var ctx = canvas.getContext('2d');
+            var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            var textColor = isDark ? '#8b949e' : '#666';
+            var lineColor = isDark ? '#58a6ff' : '#0969da';
+            
+            activeCharts[chart_id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temp (°F)',
+                        data: temps,
+                        borderColor: lineColor,
+                        backgroundColor: lineColor + '33',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + '°F';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 9 },
+                                maxRotation: 0,
+                                maxTicksLimit: 6
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 9 },
+                                callback: function(value) {
+                                    return value + '°';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        },
+        error: function() {
+            $('#' + chart_id + '-container').html('<div style="font-size:10px;color:var(--text-muted, #888);">Failed to load history</div>');
+        }
+    });
 }
 
 // Store markers by station ID for lookup
@@ -89,9 +217,13 @@ function add_marker(station_data) {
                 type: 'GET',
                 dataType: 'json',
                 success: function(data){
-                    content = get_station_popup_html(station_data, data);
-                    popup.setContent( content );
+                    var content = get_station_popup_html(station_data, data);
+                    popup.setContent(content);
                     popup.update();
+                    // Load temperature chart after popup is rendered
+                    setTimeout(function() {
+                        loadTemperatureChart(station_data['properties']['id'], data['time']);
+                    }, 100);
                 },
                 fail: function(data) {
                     alert('FAIL: ' + data);
@@ -132,9 +264,13 @@ function createWxStationMarker(stationData, requesterCallsign) {
             success: function(data) {
                 var content = get_station_popup_html(stationData, data);
                 // Add note about which request this was for
-                content += "<p class='popup-station-list' style='margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px;'>Returned for request from <b>" + requesterCallsign + "</b></p>";
+                content = content.replace('</div></div></div>', '</div></div><p class="popup-station-list" style="margin-top:8px;border-top:1px solid var(--border-color);padding-top:8px;">Returned for request from <b>' + requesterCallsign + '</b></p></div>');
                 popup.setContent(content);
                 popup.update();
+                // Load temperature chart after popup is rendered
+                setTimeout(function() {
+                    loadTemperatureChart(stationData.properties.id, data['time']);
+                }, 100);
             },
             error: function() {
                 popup.setContent("Failed to load weather data");

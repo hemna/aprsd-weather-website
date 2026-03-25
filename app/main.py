@@ -326,6 +326,40 @@ def create_app() -> FastAPI:
         report = fetch_wx_report(station_id, request)
         return report
 
+    @app.get("/wx_history/{station_id}", response_class=JSONResponse)
+    async def wx_history(station_id: str, start: str, end: str, fields: str = "temperature"):
+        """Get historical weather data for a station.
+
+        Proxies to the haminfo API /api/v1/wx/history endpoint.
+
+        :param station_id: Weather station ID
+        :param start: Start time (ISO 8601 format, e.g., 2026-03-24T00:00:00)
+        :param end: End time (ISO 8601 format)
+        :param fields: Comma-separated field names (default: temperature)
+        :returns: JSON with history array containing hourly data
+        """
+        url = f"http://{CONF.web.haminfo_ip}:{CONF.web.haminfo_port}/api/v1/wx/history"
+        LOG.debug(f"Fetching wx_history from {url}")
+
+        try:
+            headers = {API_KEY_HEADER: CONF.web.api_key}
+            params = {
+                "station_id": station_id,
+                "start": start,
+                "end": end,
+                "fields": fields,
+            }
+            response = requests.get(url=url, headers=headers, params=params, timeout=30)
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                LOG.error(f"wx_history failed: {response.status_code} - {response.text}")
+                return {"error": f"Failed to fetch history: {response.status_code}"}
+        except Exception as ex:
+            LOG.error(f"wx_history exception: {ex}")
+            return {"error": str(ex)}
+
     @app.get("/stations")
     async def get_stations(limit: int = 0, offset: int = 0):
         """Return weather stations as JSON.
